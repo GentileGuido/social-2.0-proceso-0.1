@@ -5,12 +5,11 @@ import {
   onAuthStateChanged, 
   User 
 } from 'firebase/auth';
-import { auth, googleProvider } from '../lib/firebase';
+import { firebase, googleProvider } from '../lib/firebase';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  firebaseInitialized: boolean;
   signInWithGoogle: () => Promise<void>;
   signOutUser: () => Promise<void>;
 }
@@ -32,31 +31,26 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [firebaseInitialized, setFirebaseInitialized] = useState(false);
 
   useEffect(() => {
-    if (!auth) {
-      console.warn('Firebase Auth not initialized');
-      setFirebaseInitialized(false);
+    try {
+      const { auth } = firebase();
+      
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setUser(user);
+        setLoading(false);
+      });
+
+      return unsubscribe;
+    } catch (error) {
+      console.error('Firebase initialization failed:', error);
       setLoading(false);
-      return;
     }
-
-    setFirebaseInitialized(true);
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-
-    return unsubscribe;
   }, []);
 
   const signInWithGoogle = async () => {
-    if (!auth || !googleProvider) {
-      throw new Error('Firebase not initialized. Please check your environment variables.');
-    }
-    
     try {
+      const { auth } = firebase();
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error('Error signing in with Google:', error);
@@ -65,11 +59,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signOutUser = async () => {
-    if (!auth) {
-      throw new Error('Firebase not initialized. Please check your environment variables.');
-    }
-    
     try {
+      const { auth } = firebase();
       await signOut(auth);
     } catch (error) {
       console.error('Error signing out:', error);
@@ -80,7 +71,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     user,
     loading,
-    firebaseInitialized,
     signInWithGoogle,
     signOutUser,
   };

@@ -22,7 +22,7 @@ const getTimestampMillis = (timestamp: any): number => {
 export default function Home() {
   const { groups, names, loading, error, addGroup, addName } = useSocialData();
   const { currentTheme, themes, setTheme } = useTheme();
-  const { user, loading: authLoading, firebaseInitialized, signInWithGoogle, signOutUser } = useAuth();
+  const { user, loading: authLoading, signInWithGoogle, signOutUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
@@ -156,36 +156,6 @@ export default function Home() {
     }
   });
 
-  // Show Firebase configuration error if not initialized
-  if (!firebaseInitialized && !authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <AlertCircle className="w-12 h-12 text-red-500" />
-            </div>
-            <h1 className="text-2xl font-bold text-red-600 mb-2">Configuración de Firebase Ausente</h1>
-            <p className="text-gray-600 mb-4">
-              La aplicación no puede conectarse a Firebase porque faltan las variables de entorno necesarias.
-            </p>
-            <div className="text-sm text-gray-500 space-y-2">
-              <p>Variables requeridas:</p>
-              <ul className="text-left bg-gray-100 p-3 rounded text-xs font-mono">
-                <li>NEXT_PUBLIC_FIREBASE_API_KEY</li>
-                <li>NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN</li>
-                <li>NEXT_PUBLIC_FIREBASE_PROJECT_ID</li>
-                <li>NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET</li>
-                <li>NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID</li>
-                <li>NEXT_PUBLIC_FIREBASE_APP_ID</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // Show login screen if not authenticated
   if (!user && !authLoading) {
     return (
@@ -198,13 +168,7 @@ export default function Home() {
           
           <button
             onClick={signInWithGoogle}
-            disabled={!firebaseInitialized}
-            className={`w-full flex items-center justify-center gap-3 border rounded-lg px-4 py-3 transition-colors ${
-              firebaseInitialized
-                ? 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
-            title={!firebaseInitialized ? 'Configuración de Firebase ausente' : ''}
+            className="w-full flex items-center justify-center gap-3 border rounded-lg px-4 py-3 transition-colors bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -212,7 +176,7 @@ export default function Home() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            {firebaseInitialized ? 'Continuar con Google' : 'Configuración Ausente'}
+            Continuar con Google
           </button>
         </div>
       </div>
@@ -340,10 +304,10 @@ export default function Home() {
       {/* Centered Floating Action Button */}
       <button
         onClick={handleFABClick}
-        className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-14 h-14 rounded-full bg-primary-500 text-white text-2xl leading-none shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-30"
+        className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-14 h-14 rounded-full bg-primary-500 text-white shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-30"
         aria-label="Agregar nuevo elemento"
       >
-        <Plus size={24} />
+        <Plus size={24} className="text-white" />
       </button>
 
       {/* Add Modal */}
