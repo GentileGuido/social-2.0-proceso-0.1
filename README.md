@@ -1,271 +1,173 @@
-# Social Web Application
+# Social Web 2.0 - Proceso 0.1
 
-A modern, production-ready social networking web application built with Next.js, TypeScript, and Firebase. This app allows users to manage groups and names with real-time updates, search functionality, and PWA support.
+A modern social networking application built with Next.js, Tailwind CSS, and Firebase. This application allows users to manage groups and names with a beautiful, responsive interface.
 
-## Features
+## 🚀 Features
 
-- **Real-time Data**: Firebase Firestore integration with live updates
-- **Responsive Design**: Mobile-first design with Tailwind CSS
-- **PWA Support**: Installable on desktop and mobile devices
-- **Theme Customization**: Three preset color themes (blue, green, red)
-- **Search & Filter**: Real-time search across groups and names
-- **Context Menus**: Right-click and long-press interactions
-- **Import/Export**: Data backup and restore functionality
-- **TypeScript**: Full type safety throughout the application
+### 🔐 Authentication
+- **Google Sign-In Only**: Users must authenticate using their Google account
+- **Private Data Storage**: Each user has their own private Firestore namespace
+- **Automatic Data Loading**: User data is automatically loaded upon login
 
-## Prerequisites
+### 🎨 Three-Dot Options Menu
+- **Export**: Download JSON files for individual groups and names
+- **Edit**: Open modals to update group or name text and notes
+- **Delete**: Confirmation prompts before deletion
+- **Settings**: Global three-dot menu with sorting options
 
-- **Node.js**: Version 18.0.0 or higher
-- **npm**: Version 8.0.0 or higher
-- **Firebase Project**: A Firebase project with Firestore enabled
+### 🎯 Centered "+" Button
+- **Smart Positioning**: Centered at the bottom of the viewport
+- **Context-Aware**: Creates groups when no group is expanded, adds names when one group is expanded
+- **Auto-Close**: Modals close automatically after successful creation
+- **Styled Design**: Colored circle with theme color (⅔) and white center (⅓)
 
-## Quick Start
+### 🌓 Dim Other Groups on Expand
+- **Visual Feedback**: When one group is expanded, other groups are dimmed to 50% gray
+- **Focus Enhancement**: Helps users focus on the active group
 
-### 1. Clone the Repository
+### 🎨 Theme Color Selector
+- **Seven Color Options**: C, M, Y, K, R, G, B (Cyan, Magenta, Yellow, Black, Red, Green, Blue)
+- **Circular Buttons**: Clean, modern interface
+- **Persistent Settings**: Theme selection is saved to localStorage
 
-```bash
-git clone <repository-url>
-cd social-web
-```
+### 🌍 Localization
+- **Spanish Interface**: All user-facing text translated to Spanish
+- **Complete Coverage**: Buttons, menus, modals, validation messages, headings
 
-### 2. Install Dependencies
+### 📱 Responsive Design
+- **Mobile-First**: Optimized for both mobile and desktop screens
+- **Touch-Friendly**: Long-press support for context menus
+- **Adaptive Layout**: Responsive grid and spacing
 
-```bash
-npm install
-```
+## 🛠️ Technical Stack
 
-### 3. Firebase Setup
+- **Framework**: Next.js 14.0.0
+- **Styling**: Tailwind CSS 3.3.5
+- **Database**: Firebase Firestore
+- **Authentication**: Firebase Auth (Google)
+- **Icons**: Lucide React
+- **Language**: TypeScript
 
-1. Go to the [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project or select an existing one
-3. Enable Firestore Database:
-   - Go to Firestore Database in the sidebar
-   - Click "Create Database"
-   - Choose "Start in test mode" for development
-   - Select a location close to your users
+## 📦 Installation
 
-4. Get your Firebase configuration:
-   - Go to Project Settings (gear icon)
-   - Scroll down to "Your apps"
-   - Click "Add app" and select Web
-   - Copy the configuration object
-
-### 4. Environment Variables
-
-Create a `.env.local` file in the root directory:
-
-```env
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-```
-
-### 5. Run the Development Server
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix ESLint errors
-- `npm run format` - Format code with Prettier
-- `npm run type-check` - Run TypeScript type checking
-
-## Project Structure
-
-```
-social-web/
-├── components/          # Reusable React components
-├── contexts/           # React contexts for state management
-├── lib/               # Utility libraries (Firebase config)
-├── pages/             # Next.js pages
-├── public/            # Static assets and PWA files
-├── styles/            # Global styles
-├── types/             # TypeScript type definitions
-├── .eslintrc.json     # ESLint configuration
-├── .prettierrc        # Prettier configuration
-├── next.config.js     # Next.js configuration
-├── package.json       # Dependencies and scripts
-├── tailwind.config.js # Tailwind CSS configuration
-└── tsconfig.json      # TypeScript configuration
-```
-
-## Data Model
-
-### Firestore Collections
-
-#### Groups Collection (`/groups`)
-```typescript
-{
-  id: string,
-  name: string,
-  updatedAt: Timestamp
-}
-```
-
-#### Names Collection (`/names`)
-```typescript
-{
-  id: string,
-  firstName: string,
-  notes: string,
-  groupId: string,
-  createdAt: Timestamp
-}
-```
-
-## Features in Detail
-
-### Real-time Updates
-- All data changes are reflected immediately across all connected clients
-- Uses Firebase Firestore real-time listeners
-
-### Search Functionality
-- Search across group names and name details
-- Auto-expands groups with matching results
-- Real-time filtering as you type
-
-### Context Menus
-- Right-click on desktop for context menus
-- Long-press on mobile devices
-- Edit, delete, and move operations
-
-### Theme System
-- Three preset themes: Blue, Green, Red
-- Theme selection persisted in localStorage
-- CSS variables for dynamic theming
-
-### PWA Features
-- Installable on desktop and mobile
-- Offline caching of static assets
-- Service worker for background sync
-- App manifest for native app experience
-
-### Import/Export
-- Export all data as JSON file
-- Import functionality (placeholder for future implementation)
-- Data backup and restore capabilities
-
-## Deployment
-
-### Vercel (Recommended)
-
-1. Push your code to GitHub
-2. Connect your repository to Vercel
-3. Set environment variables in Vercel dashboard
-4. Deploy with one click
-
-### Manual Deployment
-
-1. Build the application:
+1. **Clone the repository**
    ```bash
-   npm run build
+   git clone <repository-url>
+   cd social-2.0-proceso-0.1
    ```
 
-2. Start the production server:
+2. **Install dependencies**
    ```bash
+   npm install
+   ```
+
+3. **Set up Firebase**
+   - Create a new Firebase project
+   - Enable Google Authentication
+   - Enable Firestore Database
+   - Copy your Firebase configuration
+
+4. **Configure environment variables**
+   ```bash
+   cp env.example .env.local
+   ```
+   Edit `.env.local` with your Firebase configuration:
+   ```
+   NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
+   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id_here
+   ```
+
+5. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+
+6. **Build for production**
+   ```bash
+   npm run build
    npm start
    ```
 
-### Environment Variables for Production
+## 🗂️ Project Structure
 
-Make sure to set these environment variables in your deployment platform:
-
-- `NEXT_PUBLIC_FIREBASE_API_KEY`
-- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
-- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
-- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
-- `NEXT_PUBLIC_FIREBASE_APP_ID`
-
-## Development
-
-### Code Quality
-
-The project uses:
-- **ESLint** for code linting
-- **Prettier** for code formatting
-- **Husky** for pre-commit hooks
-- **TypeScript** for type safety
-
-### Adding New Features
-
-1. Create new components in `components/`
-2. Add types in `types/index.ts`
-3. Update contexts if needed
-4. Add new pages in `pages/`
-
-### Firebase Security Rules
-
-For production, update your Firestore security rules:
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /groups/{groupId} {
-      allow read, write: if true; // For development
-    }
-    match /names/{nameId} {
-      allow read, write: if true; // For development
-    }
-  }
-}
+```
+social-2.0-proceso-0.1/
+├── components/
+│   ├── ContextMenu.tsx      # Three-dot options menu
+│   ├── GroupCard.tsx        # Group display component
+│   └── Modal.tsx           # Reusable modal component
+├── contexts/
+│   ├── AuthContext.tsx      # Firebase authentication
+│   ├── SocialContext.tsx    # Data management
+│   └── ThemeContext.tsx     # Theme management
+├── lib/
+│   └── firebase.ts         # Firebase configuration
+├── pages/
+│   ├── _app.tsx            # App wrapper
+│   └── index.tsx           # Main application
+├── styles/
+│   └── globals.css         # Global styles
+└── types/
+    └── index.ts            # TypeScript definitions
 ```
 
-## Troubleshooting
+## 🔧 Key Features Implementation
 
-### Common Issues
+### Authentication Flow
+- Users are redirected to Google sign-in if not authenticated
+- User data is isolated by `userId` field in Firestore
+- Real-time data synchronization with Firebase
 
-1. **Firebase Connection Error**
-   - Check your environment variables
-   - Verify Firebase project settings
-   - Ensure Firestore is enabled
+### Data Management
+- **Groups**: Collections with name, userId, and updatedAt
+- **Names**: Collections with firstName, notes, groupId, userId, and createdAt
+- **Export**: JSON download for individual items
+- **Sorting**: A→Z, Z→A, and Recent options
 
-2. **Build Errors**
-   - Run `npm run type-check` to check TypeScript errors
-   - Run `npm run lint` to check for linting issues
+### UI/UX Features
+- **Responsive Design**: Works on all screen sizes
+- **Theme System**: Seven color themes with CSS variables
+- **Loading States**: Smooth loading indicators
+- **Error Handling**: Graceful error messages
+- **Accessibility**: ARIA labels and keyboard navigation
 
-3. **PWA Not Installing**
-   - Check that `manifest.json` is accessible
-   - Verify service worker registration
-   - Test on HTTPS (required for PWA)
+## 🎯 Usage
 
-### Development Tips
+1. **Sign In**: Click "Continuar con Google" to authenticate
+2. **Create Groups**: Click the "+" button when no group is expanded
+3. **Add Names**: Expand a group and click the "+" button
+4. **Manage Items**: Use the three-dot menu for export, edit, or delete
+5. **Customize**: Access settings to change theme and sorting options
 
-- Use the Firebase Emulator for local development
-- Check browser console for service worker logs
-- Use React DevTools for component debugging
+## 🔒 Security
 
-## Contributing
+- **User Isolation**: All data is scoped to the authenticated user
+- **Firebase Security Rules**: Recommended to implement proper Firestore security rules
+- **Environment Variables**: Sensitive configuration is stored in environment variables
+
+## 🚀 Deployment
+
+The application can be deployed to:
+- **Vercel**: Recommended for Next.js applications
+- **Netlify**: Static site hosting
+- **Firebase Hosting**: Integrated with Firebase ecosystem
+
+## 📝 License
+
+This project is licensed under the MIT License.
+
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Run tests and linting
+4. Test thoroughly
 5. Submit a pull request
 
-## License
+## 📞 Support
 
-This project is licensed under the MIT License.
-
-## Support
-
-For issues and questions:
-1. Check the troubleshooting section
-2. Review Firebase documentation
-3. Open an issue on GitHub
-
----
-
-Built with ❤️ using Next.js, TypeScript, and Firebase 
+For support or questions, please open an issue in the repository. 

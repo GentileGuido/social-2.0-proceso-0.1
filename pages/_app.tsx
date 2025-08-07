@@ -1,5 +1,6 @@
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
+import { AuthProvider } from '../contexts/AuthContext';
 import { SocialProvider } from '../contexts/SocialContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import '../styles/globals.css';
@@ -17,11 +18,13 @@ export default function App({ Component, pageProps }: AppProps) {
         <link rel="manifest" href="/manifest.json" />
       </Head>
       
-      <ThemeProvider>
-        <SocialProvider>
-          <Component {...pageProps} />
-        </SocialProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <SocialProvider>
+            <Component {...pageProps} />
+          </SocialProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </>
   );
 } 

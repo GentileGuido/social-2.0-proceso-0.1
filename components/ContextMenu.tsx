@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Edit, Trash2, Move } from 'lucide-react';
+import { MoreVertical, Download, Edit, Trash2 } from 'lucide-react';
 import { ContextMenuOption } from '../types';
 
 interface ContextMenuProps {
@@ -35,6 +35,19 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
   if (!isOpen) return null;
 
+  const getIcon = (iconName?: string) => {
+    switch (iconName) {
+      case 'download':
+        return <Download size={16} />;
+      case 'edit':
+        return <Edit size={16} />;
+      case 'delete':
+        return <Trash2 size={16} />;
+      default:
+        return <MoreVertical size={16} />;
+    }
+  };
+
   return (
     <div
       ref={menuRef}
@@ -42,6 +55,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       style={{
         left: position.x,
         top: position.y,
+        transform: 'translate(-50%, 8px)',
       }}
     >
       {options.map((option, index) => (
@@ -51,13 +65,11 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
             option.action();
             onClose();
           }}
-          className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors flex items-center gap-2 ${
-            option.danger ? 'text-red-600 hover:bg-red-50' : 'text-gray-700'
+          className={`w-full flex items-center gap-2 px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors ${
+            option.danger ? 'text-red-600 hover:text-red-700' : 'text-gray-700'
           }`}
         >
-          {option.icon === 'edit' && <Edit size={16} />}
-          {option.icon === 'delete' && <Trash2 size={16} />}
-          {option.icon === 'move' && <Move size={16} />}
+          {getIcon(option.icon)}
           {option.label}
         </button>
       ))}

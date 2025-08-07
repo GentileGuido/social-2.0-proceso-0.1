@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ChevronDown, ChevronRight, Users } from 'lucide-react';
+import { ChevronDown, ChevronRight, Users, MoreVertical } from 'lucide-react';
 import { Group, Name, ContextMenuOption } from '../types';
 import { useSocialData } from '../contexts/SocialContext';
 import { ContextMenu } from './ContextMenu';
@@ -11,6 +11,7 @@ interface GroupCardProps {
   isExpanded: boolean;
   onToggle: () => void;
   searchTerm: string;
+  isDimmed?: boolean;
 }
 
 export const GroupCard: React.FC<GroupCardProps> = ({
@@ -19,22 +20,28 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   isExpanded,
   onToggle,
   searchTerm,
+  isDimmed = false,
 }) => {
-  const { updateGroup, deleteGroup, updateName, moveName, groups } = useSocialData();
+  const { updateGroup, deleteGroup, updateName, deleteName, exportGroup, exportName, groups } = useSocialData();
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+  const [contextMenuType, setContextMenuType] = useState<'group' | 'name'>('group');
+  const [contextMenuTargetId, setContextMenuTargetId] = useState<string>('');
   const [editingGroup, setEditingGroup] = useState(false);
   const [editingName, setEditingName] = useState<string | null>(null);
   const [groupName, setGroupName] = useState(group.name);
   const [editingNameData, setEditingNameData] = useState({ firstName: '', notes: '' });
-  const [showMoveModal, setShowMoveModal] = useState(false);
-  const [movingNameId, setMovingNameId] = useState<string | null>(null);
-  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<'group' | 'name' | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const handleContextMenu = (e: React.MouseEvent) => {
+  const handleContextMenu = (e: React.MouseEvent, type: 'group' | 'name' = 'group', targetId: string = '') => {
     e.preventDefault();
+    e.stopPropagation();
     setContextMenuPosition({ x: e.clientX, y: e.clientY });
+    setContextMenuType(type);
+    setContextMenuTargetId(targetId);
     setShowContextMenu(true);
   };
 
@@ -43,27 +50,67 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     const rect = cardRef.current?.getBoundingClientRect();
     if (rect) {
       setContextMenuPosition({ x: rect.left, y: rect.bottom });
+      setContextMenuType('group');
+      setContextMenuTargetId('');
       setShowContextMenu(true);
     }
   };
 
-  const groupOptions: ContextMenuOption[] = [
-    {
-      label: 'Edit Group',
-      action: () => setEditingGroup(true),
-      icon: 'edit',
-    },
-    {
-      label: 'Delete Group',
-      action: () => {
-        if (confirm('Are you sure you want to delete this group and all its names?')) {
-          deleteGroup(group.id);
-        }
-      },
-      icon: 'delete',
-      danger: true,
-    },
-  ];
+  const getContextMenuOptions = (): ContextMenuOption[] => {
+    if (contextMenuType === 'group') {
+      return [
+        {
+          label: 'Exportar',
+          action: () => exportGroup(group.id),
+          icon: 'download',
+        },
+        {
+          label: 'Editar',
+          action: () => setEditingGroup(true),
+          icon: 'edit',
+        },
+        {
+          label: 'Eliminar',
+          action: () => {
+            setDeletingItem('group');
+            setDeletingId(group.id);
+            setShowDeleteConfirm(true);
+          },
+          icon: 'delete',
+          danger: true,
+        },
+      ];
+    } else {
+      return [
+        {
+          label: 'Exportar',
+          action: () => exportName(contextMenuTargetId),
+          icon: 'download',
+        },
+        {
+          label: 'Editar',
+          action: () => {
+            const name = names.find(n => n.id === contextMenuTargetId);
+            if (name) {
+              setEditingNameData({ firstName: name.firstName, notes: name.notes });
+              setEditingName(contextMenuTargetId);
+            }
+          },
+          icon: 'edit',
+        },
+        {
+          label: 'Eliminar',
+          action: () => {
+            setDeletingItem('name');
+            setDeletingId(contextMenuTargetId);
+            setShowDeleteConfirm(true);
+          },
+          icon: 'delete',
+          danger: true,
+        },
+      ];
+    }
+  };
 
   const handleSaveGroup = async () => {
     if (groupName.trim()) {
@@ -80,12 +127,21 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     }
   };
 
-  const handleMoveName = async () => {
-    if (movingNameId && selectedGroupId) {
-      await moveName(movingNameId, selectedGroupId);
-      setMovingNameId(null);
-      setSelectedGroupId('');
-      setShowMoveModal(false);
+  const handleDelete = async () => {
+    if (!deletingItem || !deletingId) return;
+
+    try {
+      if (deletingItem === 'group') {
+        await deleteGroup(deletingId);
+      } else if (deletingItem === 'name') {
+        await deleteName(deletingId);
+      }
+    } catch (error) {
+      console.error('Error deleting item:', error);
+    } finally {
+      setShowDeleteConfirm(false);
+      setDeletingItem(null);
+      setDeletingId(null);
     }
   };
 
@@ -99,8 +155,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     <>
       <div
         ref={cardRef}
-        className="bg-white rounded-lg shadow-md border border-gray-200 mb-4 overflow-hidden"
-        onContextMenu={handleContextMenu}
+        className={`bg-white rounded-lg shadow-md border border-gray-200 mb-4 overflow-hidden transition-all duration-200 ${
+          isDimmed ? 'opacity-50 grayscale' : ''
+        }`}
+        onContextMenu={(e) => handleContextMenu(e, 'group')}
         onTouchStart={(e) => {
           const timer = setTimeout(() => handleLongPress(e), 500);
           const cleanup = () => clearTimeout(timer);
@@ -118,31 +176,45 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               <Users size={20} className="text-primary-500" />
               <h3 className="font-semibold text-gray-900">{group.name}</h3>
             </div>
-            <span className="text-sm text-gray-500">({names.length} names)</span>
+            <span className="text-sm text-gray-500">({names.length} nombres)</span>
           </div>
+          
+          {/* Three-dot menu button */}
+          <button
+            onClick={(e) => handleContextMenu(e, 'group')}
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="Opciones del grupo"
+          >
+            <MoreVertical size={16} className="text-gray-500" />
+          </button>
         </div>
 
         {/* Names List */}
         {isExpanded && (
           <div className="border-t border-gray-200 bg-gray-50">
             {filteredNames.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">No names in this group</div>
+              <div className="p-4 text-center text-gray-500">No hay nombres en este grupo</div>
             ) : (
               filteredNames.map((name) => (
                 <div
                   key={name.id}
-                  className="p-4 border-b border-gray-200 last:border-b-0 hover:bg-gray-100 transition-colors"
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setContextMenuPosition({ x: e.clientX, y: e.clientY });
-                    setShowContextMenu(true);
-                  }}
+                  className="p-4 border-b border-gray-200 last:border-b-0 hover:bg-gray-100 transition-colors flex items-center justify-between"
                 >
-                  <div className="font-medium text-gray-900">{name.firstName}</div>
-                  {name.notes && (
-                    <div className="text-sm text-gray-600 mt-1">{name.notes}</div>
-                  )}
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">{name.firstName}</div>
+                    {name.notes && (
+                      <div className="text-sm text-gray-600 mt-1">{name.notes}</div>
+                    )}
+                  </div>
+                  
+                  {/* Three-dot menu button for names */}
+                  <button
+                    onClick={(e) => handleContextMenu(e, 'name', name.id)}
+                    className="p-1 hover:bg-gray-200 rounded-full transition-colors ml-2"
+                    aria-label="Opciones del nombre"
+                  >
+                    <MoreVertical size={16} className="text-gray-500" />
+                  </button>
                 </div>
               ))
             )}
@@ -155,26 +227,26 @@ export const GroupCard: React.FC<GroupCardProps> = ({
         isOpen={showContextMenu}
         onClose={() => setShowContextMenu(false)}
         position={contextMenuPosition}
-        options={groupOptions}
+        options={getContextMenuOptions()}
       />
 
       {/* Edit Group Modal */}
       <Modal
         isOpen={editingGroup}
         onClose={() => setEditingGroup(false)}
-        title="Edit Group"
+        title="Editar Grupo"
       >
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Group Name
+              Nombre del Grupo
             </label>
             <input
               type="text"
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Enter group name"
+              placeholder="Ingrese nombre del grupo"
             />
           </div>
           <div className="flex gap-2 justify-end">
@@ -182,13 +254,13 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               onClick={() => setEditingGroup(false)}
               className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
             >
-              Cancel
+              Cancelar
             </button>
             <button
               onClick={handleSaveGroup}
               className="px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors"
             >
-              Save
+              Guardar
             </button>
           </div>
         </div>
@@ -198,30 +270,30 @@ export const GroupCard: React.FC<GroupCardProps> = ({
       <Modal
         isOpen={!!editingName}
         onClose={() => setEditingName(null)}
-        title="Edit Name"
+        title="Editar Nombre"
       >
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              First Name
+              Nombre
             </label>
             <input
               type="text"
               value={editingNameData.firstName}
               onChange={(e) => setEditingNameData({ ...editingNameData, firstName: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Enter first name"
+              placeholder="Ingrese nombre"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes
+              Notas
             </label>
             <textarea
               value={editingNameData.notes}
               onChange={(e) => setEditingNameData({ ...editingNameData, notes: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Enter notes (optional)"
+              placeholder="Ingrese notas (opcional)"
               rows={3}
             />
           </div>
@@ -230,57 +302,41 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               onClick={() => setEditingName(null)}
               className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
             >
-              Cancel
+              Cancelar
             </button>
             <button
               onClick={handleSaveName}
               className="px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors"
             >
-              Save
+              Guardar
             </button>
           </div>
         </div>
       </Modal>
 
-      {/* Move Name Modal */}
+      {/* Delete Confirmation Modal */}
       <Modal
-        isOpen={showMoveModal}
-        onClose={() => setShowMoveModal(false)}
-        title="Move Name"
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Confirmar Eliminación"
       >
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Select Destination Group
-            </label>
-            <select
-              value={selectedGroupId}
-              onChange={(e) => setSelectedGroupId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="">Select a group</option>
-              {groups
-                .filter((g) => g.id !== group.id)
-                .map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-            </select>
-          </div>
+          <p className="text-gray-700">
+            ¿Está seguro de que desea eliminar este {deletingItem === 'group' ? 'grupo' : 'nombre'}?
+            {deletingItem === 'group' && ' Esta acción también eliminará todos los nombres del grupo.'}
+          </p>
           <div className="flex gap-2 justify-end">
             <button
-              onClick={() => setShowMoveModal(false)}
+              onClick={() => setShowDeleteConfirm(false)}
               className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
             >
-              Cancel
+              Cancelar
             </button>
             <button
-              onClick={handleMoveName}
-              disabled={!selectedGroupId}
-              className="px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handleDelete}
+              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
             >
-              Move
+              Eliminar
             </button>
           </div>
         </div>

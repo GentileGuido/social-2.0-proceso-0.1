@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Group, Name } from '../types';
+import { useAuth } from './AuthContext';
 
 interface SocialContextType {
   groups: Group[];
@@ -26,6 +27,8 @@ interface SocialContextType {
   updateName: (id: string, firstName: string, notes: string) => Promise<void>;
   deleteName: (id: string) => Promise<void>;
   moveName: (nameId: string, newGroupId: string) => Promise<void>;
+  exportGroup: (groupId: string) => void;
+  exportName: (nameId: string) => void;
 }
 
 const SocialContext = createContext<SocialContextType | undefined>(undefined);
@@ -47,12 +50,26 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
   const [names, setNames] = useState<Name[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Listen to groups
-    const groupsQuery = query(collection(db, 'groups'), orderBy('updatedAt', 'desc'));
+    if (!user || !db) {
+      setGroups([]);
+      setNames([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
+    // Listen to user-specific groups using the correct structure
+    const userGroupsQuery = query(
+      collection(db, 'users', user.uid, 'groups'),
+      orderBy('updatedAt', 'desc')
+    );
+    
     const unsubscribeGroups = onSnapshot(
-      groupsQuery,
+      userGroupsQuery,
       (snapshot) => {
         const groupsData: Group[] = [];
         snapshot.forEach((doc) => {
@@ -71,10 +88,14 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
       }
     );
 
-    // Listen to all names
-    const namesQuery = query(collection(db, 'names'), orderBy('createdAt', 'desc'));
+    // Listen to all names across all user groups
+    const userNamesQuery = query(
+      collection(db, 'users', user.uid, 'names'),
+      orderBy('createdAt', 'desc')
+    );
+    
     const unsubscribeNames = onSnapshot(
-      namesQuery,
+      userNamesQuery,
       (snapshot) => {
         const namesData: Name[] = [];
         snapshot.forEach((doc) => {
@@ -95,11 +116,13 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
       unsubscribeGroups();
       unsubscribeNames();
     };
-  }, []);
+  }, [user]);
 
   const addGroup = async (name: string) => {
+    if (!user || !db) throw new Error('User not authenticated or Firebase not initialized');
+    
     try {
-      await addDoc(collection(db, 'groups'), {
+      await addDoc(collection(db, 'users', user.uid, 'groups'), {
         name,
         updatedAt: serverTimestamp(),
       });
@@ -110,8 +133,10 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
   };
 
   const updateGroup = async (id: string, name: string) => {
+    if (!user || !db) throw new Error('User not authenticated or Firebase not initialized');
+    
     try {
-      const groupRef = doc(db, 'groups', id);
+      const groupRef = doc(db, 'users', user.uid, 'groups', id);
       await updateDoc(groupRef, {
         name,
         updatedAt: serverTimestamp(),
@@ -123,15 +148,17 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
   };
 
   const deleteGroup = async (id: string) => {
+    if (!user || !db) throw new Error('User not authenticated or Firebase not initialized');
+    
     try {
       // Delete all names in the group first
       const groupNames = names.filter((name) => name.groupId === id);
       for (const name of groupNames) {
-        await deleteDoc(doc(db, 'names', name.id));
+        await deleteDoc(doc(db, 'users', user.uid, 'names', name.id));
       }
       
       // Delete the group
-      await deleteDoc(doc(db, 'groups', id));
+      await deleteDoc(doc(db, 'users', user.uid, 'groups', id));
     } catch (error) {
       console.error('Error deleting group:', error);
       throw new Error('Failed to delete group');
@@ -139,8 +166,10 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
   };
 
   const addName = async (groupId: string, firstName: string, notes: string) => {
+    if (!user || !db) throw new Error('User not authenticated or Firebase not initialized');
+    
     try {
-      await addDoc(collection(db, 'names'), {
+      await addDoc(collection(db, 'users', user.uid, 'names'), {
         firstName,
         notes,
         groupId,
@@ -153,8 +182,10 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
   };
 
   const updateName = async (id: string, firstName: string, notes: string) => {
+    if (!user || !db) throw new Error('User not authenticated or Firebase not initialized');
+    
     try {
-      const nameRef = doc(db, 'names', id);
+      const nameRef = doc(db, 'users', user.uid, 'names', id);
       await updateDoc(nameRef, {
         firstName,
         notes,
@@ -166,8 +197,10 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
   };
 
   const deleteName = async (id: string) => {
+    if (!user || !db) throw new Error('User not authenticated or Firebase not initialized');
+    
     try {
-      await deleteDoc(doc(db, 'names', id));
+      await deleteDoc(doc(db, 'users', user.uid, 'names', id));
     } catch (error) {
       console.error('Error deleting name:', error);
       throw new Error('Failed to delete name');
@@ -175,8 +208,10 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
   };
 
   const moveName = async (nameId: string, newGroupId: string) => {
+    if (!user || !db) throw new Error('User not authenticated or Firebase not initialized');
+    
     try {
-      const nameRef = doc(db, 'names', nameId);
+      const nameRef = doc(db, 'users', user.uid, 'names', nameId);
       await updateDoc(nameRef, {
         groupId: newGroupId,
       });
@@ -184,6 +219,67 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
       console.error('Error moving name:', error);
       throw new Error('Failed to move name');
     }
+  };
+
+  const exportGroup = (groupId: string) => {
+    const group = groups.find(g => g.id === groupId);
+    const groupNames = names.filter(n => n.groupId === groupId);
+    
+    if (!group) return;
+
+    const data = {
+      group: {
+        id: group.id,
+        name: group.name,
+        updatedAt: group.updatedAt,
+      },
+      names: groupNames.map(name => ({
+        id: name.id,
+        firstName: name.firstName,
+        notes: name.notes,
+        createdAt: name.createdAt,
+      })),
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${group.name}-export.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportName = (nameId: string) => {
+    const name = names.find(n => n.id === nameId);
+    const group = groups.find(g => g.id === name?.groupId);
+    
+    if (!name || !group) return;
+
+    const data = {
+      name: {
+        id: name.id,
+        firstName: name.firstName,
+        notes: name.notes,
+        createdAt: name.createdAt,
+      },
+      group: {
+        id: group.id,
+        name: group.name,
+      },
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name.firstName}-export.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const value: SocialContextType = {
@@ -198,6 +294,8 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     updateName,
     deleteName,
     moveName,
+    exportGroup,
+    exportName,
   };
 
   return <SocialContext.Provider value={value}>{children}</SocialContext.Provider>;
