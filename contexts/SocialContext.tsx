@@ -65,6 +65,10 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
 
   useEffect(() => {
     if (!user || !db) {
+      if (!db) {
+        console.warn('Firestore not initialized');
+        setError('Firebase not initialized. Please check your environment variables.');
+      }
       setGroups([]);
       setNames([]);
       setLoading(false);
@@ -72,6 +76,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     }
 
     setLoading(true);
+    setError(null);
 
     // Listen to user-specific groups using the correct structure
     const userGroupsQuery = query(

@@ -34,6 +34,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     if (!auth) {
+      console.warn('Firebase Auth not initialized');
       setLoading(false);
       return;
     }
@@ -48,7 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signInWithGoogle = async () => {
     if (!auth || !googleProvider) {
-      throw new Error('Firebase not initialized');
+      throw new Error('Firebase not initialized. Please check your environment variables.');
     }
     
     try {
@@ -61,7 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signOutUser = async () => {
     if (!auth) {
-      throw new Error('Firebase not initialized');
+      throw new Error('Firebase not initialized. Please check your environment variables.');
     }
     
     try {

@@ -21,33 +21,47 @@ let db: Firestore | null = null;
 let auth: Auth | null = null;
 let googleProvider: GoogleAuthProviderType | null = null;
 
-if (typeof window !== 'undefined' && firebaseConfig.apiKey) {
-  // Safe initialization pattern
-  app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  db = getFirestore(app);
-  auth = getAuth(app);
-  googleProvider = new GoogleAuthProvider();
+// Check if we have the minimum required config
+const hasValidConfig = firebaseConfig.apiKey && 
+                      firebaseConfig.authDomain && 
+                      firebaseConfig.projectId && 
+                      firebaseConfig.storageBucket && 
+                      firebaseConfig.messagingSenderId && 
+                      firebaseConfig.appId;
 
-  // Connect to emulator in development
-  if (process.env.NODE_ENV === 'development') {
-    try {
-      connectFirestoreEmulator(db, 'localhost', 8080);
-    } catch {
-      // Emulator might not be running, which is fine
-      console.log('Firestore emulator not running');
-    }
-  }
+if (typeof window !== 'undefined' && hasValidConfig) {
+  try {
+    // Safe initialization pattern
+    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    db = getFirestore(app);
+    auth = getAuth(app);
+    googleProvider = new GoogleAuthProvider();
 
-  // Optional: Initialize Analytics only on client side
-  if (typeof window !== 'undefined' && firebaseConfig.measurementId && app) {
-    import('firebase/analytics').then(({ getAnalytics }) => {
+    // Connect to emulator in development
+    if (process.env.NODE_ENV === 'development') {
       try {
-        getAnalytics(app!);
-      } catch (error) {
-        console.log('Analytics not available:', error);
+        connectFirestoreEmulator(db, 'localhost', 8080);
+      } catch {
+        // Emulator might not be running, which is fine
+        console.log('Firestore emulator not running');
       }
-    });
+    }
+
+    // Optional: Initialize Analytics only on client side
+    if (firebaseConfig.measurementId && app) {
+      import('firebase/analytics').then(({ getAnalytics }) => {
+        try {
+          getAnalytics(app!);
+        } catch (error) {
+          console.log('Analytics not available:', error);
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Failed to initialize Firebase:', error);
   }
+} else if (typeof window !== 'undefined') {
+  console.warn('Firebase not initialized: Missing required environment variables');
 }
 
 export { db, auth, googleProvider };

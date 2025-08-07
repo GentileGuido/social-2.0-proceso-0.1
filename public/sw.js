@@ -2,15 +2,19 @@ const CACHE_NAME = 'social-v1';
 const urlsToCache = [
   '/',
   '/manifest.json',
-  '/static/css/',
-  '/static/js/',
-  '/static/media/',
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
+      .then((cache) => {
+        // Only cache files that exist, handle errors gracefully
+        return Promise.allSettled(
+          urlsToCache.map(url => cache.add(url).catch(err => {
+            console.log('Failed to cache:', url, err);
+          }))
+        );
+      })
   );
 });
 
@@ -20,6 +24,13 @@ self.addEventListener('fetch', (event) => {
       .then((response) => {
         // Return cached version or fetch from network
         return response || fetch(event.request);
+      })
+      .catch(() => {
+        // If both cache and network fail, return a fallback
+        return new Response('Offline content not available', {
+          status: 503,
+          statusText: 'Service Unavailable',
+        });
       })
   );
 });

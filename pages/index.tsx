@@ -20,7 +20,7 @@ const getTimestampMillis = (timestamp: any): number => {
 };
 
 export default function Home() {
-  const { groups, names, loading, addGroup, addName } = useSocialData();
+  const { groups, names, loading, error, addGroup, addName } = useSocialData();
   const { currentTheme, themes, setTheme } = useTheme();
   const { user, signInWithGoogle, signOutUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
@@ -189,6 +189,23 @@ export default function Home() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if Firebase is not initialized
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-red-600 mb-2">Error de Configuración</h1>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <p className="text-sm text-gray-500">
+              Por favor, verifica que las variables de entorno de Firebase estén configuradas correctamente.
+            </p>
+          </div>
         </div>
       </div>
     );
