@@ -10,6 +10,7 @@ import { auth, googleProvider } from '../lib/firebase';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  firebaseInitialized: boolean;
   signInWithGoogle: () => Promise<void>;
   signOutUser: () => Promise<void>;
 }
@@ -31,14 +32,17 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [firebaseInitialized, setFirebaseInitialized] = useState(false);
 
   useEffect(() => {
     if (!auth) {
       console.warn('Firebase Auth not initialized');
+      setFirebaseInitialized(false);
       setLoading(false);
       return;
     }
 
+    setFirebaseInitialized(true);
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
@@ -76,6 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     user,
     loading,
+    firebaseInitialized,
     signInWithGoogle,
     signOutUser,
   };

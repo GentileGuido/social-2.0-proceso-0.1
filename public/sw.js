@@ -1,4 +1,4 @@
-const CACHE_NAME = 'social-v1';
+const CACHE_NAME = 'social-v2';
 const urlsToCache = [
   '/',
   '/manifest.json',
@@ -16,6 +16,27 @@ self.addEventListener('install', (event) => {
         );
       })
   );
+  // Skip waiting to activate immediately
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    Promise.all([
+      // Claim all clients immediately
+      self.clients.claim(),
+      // Clean up old caches
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      })
+    ])
+  );
 });
 
 self.addEventListener('fetch', (event) => {
@@ -32,19 +53,5 @@ self.addEventListener('fetch', (event) => {
           statusText: 'Service Unavailable',
         });
       })
-  );
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
   );
 }); 
