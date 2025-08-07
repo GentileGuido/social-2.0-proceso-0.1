@@ -8,6 +8,17 @@ import { Modal } from '../components/Modal';
 
 type SortOption = 'A-Z' | 'Z-A' | 'Recent';
 
+// Helper function to safely get timestamp milliseconds
+const getTimestampMillis = (timestamp: any): number => {
+  if (timestamp?.toMillis) {
+    return timestamp.toMillis();
+  }
+  if (timestamp?.seconds) {
+    return timestamp.seconds * 1000;
+  }
+  return 0;
+};
+
 export default function Home() {
   const { groups, names, loading, addGroup, addName } = useSocialData();
   const { currentTheme, themes, setTheme } = useTheme();
@@ -20,6 +31,7 @@ export default function Home() {
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [formData, setFormData] = useState({ name: '', firstName: '', notes: '' });
   const [sortOption, setSortOption] = useState<SortOption>('Recent');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Auto-expand groups with matching names
   useEffect(() => {
@@ -65,14 +77,24 @@ export default function Home() {
   };
 
   const handleAdd = async () => {
-    if (modalType === 'group' && formData.name.trim()) {
-      await addGroup(formData.name.trim());
-      setShowAddModal(false);
-      setFormData({ name: '', firstName: '', notes: '' });
-    } else if (modalType === 'name' && formData.firstName.trim() && selectedGroupId) {
-      await addName(selectedGroupId, formData.firstName.trim(), formData.notes);
-      setShowAddModal(false);
-      setFormData({ name: '', firstName: '', notes: '' });
+    if (isSaving) return;
+    
+    setIsSaving(true);
+    try {
+      if (modalType === 'group' && formData.name.trim()) {
+        await addGroup(formData.name.trim());
+        setShowAddModal(false);
+        setFormData({ name: '', firstName: '', notes: '' });
+      } else if (modalType === 'name' && formData.firstName.trim() && selectedGroupId) {
+        await addName(selectedGroupId, formData.firstName.trim(), formData.notes);
+        setShowAddModal(false);
+        setFormData({ name: '', firstName: '', notes: '' });
+      }
+    } catch (error) {
+      console.error('Error adding item:', error);
+      // You could show a toast notification here
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -128,7 +150,7 @@ export default function Home() {
       case 'Z-A':
         return b.name.localeCompare(a.name);
       case 'Recent':
-        return b.updatedAt.toMillis() - a.updatedAt.toMillis();
+        return getTimestampMillis(b.updatedAt) - getTimestampMillis(a.updatedAt);
       default:
         return 0;
     }
@@ -265,13 +287,10 @@ export default function Home() {
       {/* Centered Floating Action Button */}
       <button
         onClick={handleFABClick}
-        className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-30"
-        style={{
-          background: `linear-gradient(135deg, ${currentTheme.colors.primary} 0%, ${currentTheme.colors.primary} 66%, white 66%, white 100%)`,
-        }}
+        className="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-14 h-14 rounded-full bg-primary-500 text-white text-2xl leading-none shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-30"
         aria-label="Agregar nuevo elemento"
       >
-        <Plus size={24} className="text-white" />
+        <Plus size={24} />
       </button>
 
       {/* Add Modal */}
@@ -328,18 +347,20 @@ export default function Home() {
             <button
               onClick={() => setShowAddModal(false)}
               className="btn-secondary"
+              disabled={isSaving}
             >
               Cancelar
             </button>
             <button
               onClick={handleAdd}
               disabled={
+                isSaving ||
                 (modalType === 'group' && !formData.name.trim()) ||
                 (modalType === 'name' && !formData.firstName.trim())
               }
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Agregar
+              {isSaving ? 'Guardando...' : 'Agregar'}
             </button>
           </div>
         </div>

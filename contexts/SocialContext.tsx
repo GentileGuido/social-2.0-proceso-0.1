@@ -15,6 +15,17 @@ import { db } from '../lib/firebase';
 import { Group, Name } from '../types';
 import { useAuth } from './AuthContext';
 
+// Helper function to safely get timestamp milliseconds
+const getTimestampMillis = (timestamp: any): number => {
+  if (timestamp?.toMillis) {
+    return timestamp.toMillis();
+  }
+  if (timestamp?.seconds) {
+    return timestamp.seconds * 1000;
+  }
+  return 0;
+};
+
 interface SocialContextType {
   groups: Group[];
   names: Name[];
@@ -73,9 +84,11 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
       (snapshot) => {
         const groupsData: Group[] = [];
         snapshot.forEach((doc) => {
+          const data = doc.data();
           groupsData.push({
             id: doc.id,
-            ...doc.data(),
+            name: data.name || '',
+            updatedAt: data.updatedAt || serverTimestamp(),
           } as Group);
         });
         setGroups(groupsData);
@@ -99,9 +112,13 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
       (snapshot) => {
         const namesData: Name[] = [];
         snapshot.forEach((doc) => {
+          const data = doc.data();
           namesData.push({
             id: doc.id,
-            ...doc.data(),
+            firstName: data.firstName || '',
+            notes: data.notes || '',
+            groupId: data.groupId || '',
+            createdAt: data.createdAt || serverTimestamp(),
           } as Name);
         });
         setNames(namesData);

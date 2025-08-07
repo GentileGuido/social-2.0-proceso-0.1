@@ -2,14 +2,17 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator, Firestore } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider, Auth, GoogleAuthProvider as GoogleAuthProviderType } from 'firebase/auth';
 
+// Helper function to safely get and trim environment variables
+const env = (key: string): string => (process.env[key] ?? '').trim();
+
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+  apiKey: env('NEXT_PUBLIC_FIREBASE_API_KEY'),
+  authDomain: env('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'),
+  projectId: env('NEXT_PUBLIC_FIREBASE_PROJECT_ID'),
+  storageBucket: env('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'),
+  messagingSenderId: env('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
+  appId: env('NEXT_PUBLIC_FIREBASE_APP_ID'),
+  measurementId: env('NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID'),
 };
 
 // Initialize Firebase only if we're in the browser and have valid config
@@ -18,7 +21,7 @@ let db: Firestore | null = null;
 let auth: Auth | null = null;
 let googleProvider: GoogleAuthProviderType | null = null;
 
-if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+if (typeof window !== 'undefined' && firebaseConfig.apiKey) {
   // Safe initialization pattern
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   db = getFirestore(app);
@@ -36,7 +39,7 @@ if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
   }
 
   // Optional: Initialize Analytics only on client side
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID && app) {
+  if (typeof window !== 'undefined' && firebaseConfig.measurementId && app) {
     import('firebase/analytics').then(({ getAnalytics }) => {
       try {
         getAnalytics(app!);
