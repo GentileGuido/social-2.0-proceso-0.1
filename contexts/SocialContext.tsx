@@ -17,6 +17,7 @@ import { useAuth } from './AuthContext';
 
 // Helper function to safely get timestamp milliseconds
 const getTimestampMillis = (timestamp: any): number => {
+  if (!timestamp) return 0;
   if (timestamp?.toMillis) {
     return timestamp.toMillis();
   }

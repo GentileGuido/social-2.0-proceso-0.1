@@ -7,7 +7,7 @@ const getEnvVar = (key: string): string | undefined => {
   const value = process.env[key];
   if (!value) return undefined;
   
-  // Trim whitespace and normalize dashes
+  // Trim whitespace and normalize dashes (fix for en-dash/em-dash issues)
   return value.trim().replace(/\u2013|\u2014/g, '-');
 };
 
@@ -28,7 +28,8 @@ const missing = required.filter((k) => !cfg[k]);
 
 if (missing.length > 0) {
   console.warn('Firebase config incomplete. Missing:', missing);
-  console.warn('Please check your environment variables.');
+  console.warn('Please check your environment variables in Railway.');
+  console.warn('Required variables:', required);
 }
 
 // Initialize Firebase only if we have all required config and we're in the browser
