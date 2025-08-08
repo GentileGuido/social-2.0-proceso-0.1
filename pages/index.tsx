@@ -22,7 +22,7 @@ const getTimestampMillis = (timestamp: any): number => {
 export default function Home() {
   const { groups, names, loading, error, addGroup, addName } = useSocialData();
   const { currentTheme, themes, setTheme } = useTheme();
-  const { user, loading: authLoading, signInWithGoogle, signOutUser } = useAuth();
+  const { user, loading: authLoading, firebaseError, signInWithGoogle, signOutUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
@@ -155,6 +155,39 @@ export default function Home() {
         return 0;
     }
   });
+
+  // Show Firebase configuration error
+  if (firebaseError && !authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <AlertCircle className="w-12 h-12 text-red-500" />
+            </div>
+            <h1 className="text-2xl font-bold text-red-600 mb-2">Configuración de Firebase Ausente</h1>
+            <p className="text-gray-600 mb-4">
+              La aplicación no puede conectarse a Firebase porque faltan las variables de entorno necesarias.
+            </p>
+            <div className="text-sm text-gray-500 space-y-2">
+              <p>Variables requeridas:</p>
+              <ul className="text-left bg-gray-100 p-3 rounded text-xs font-mono">
+                <li>NEXT_PUBLIC_FIREBASE_API_KEY</li>
+                <li>NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN</li>
+                <li>NEXT_PUBLIC_FIREBASE_PROJECT_ID</li>
+                <li>NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET</li>
+                <li>NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID</li>
+                <li>NEXT_PUBLIC_FIREBASE_APP_ID</li>
+              </ul>
+              <p className="mt-4 text-xs">
+                Error específico: {firebaseError}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Show login screen if not authenticated
   if (!user && !authLoading) {

@@ -9,28 +9,35 @@ let _app: FirebaseApp | null = null;
 let _auth: Auth | null = null;
 let _db: Firestore | null = null;
 let _analytics: Analytics | null = null;
+let _initializationError: string | null = null;
 
 export function firebase() {
-  if (_app) return { app: _app, auth: _auth!, db: _db!, analytics: _analytics };
+  if (_app) return { app: _app, auth: _auth!, db: _db!, analytics: _analytics, error: _initializationError };
 
-  const cfg = getFirebaseEnv(); // lanza error si falta algo
-  const app = getApps().length ? getApp() : initializeApp(cfg);
+  try {
+    const cfg = getFirebaseEnv(); // lanza error si falta algo
+    const app = getApps().length ? getApp() : initializeApp(cfg);
 
-  const auth = getAuth(app);
-  const db   = getFirestore(app);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
 
-  _app = app; _auth = auth; _db = db;
+    _app = app; _auth = auth; _db = db;
 
-  // Analytics (solo si soportado y si hay measurementId)
-  (async () => {
-    try {
-      if (cfg.measurementId && (await analyticsSupported())) {
-        _analytics = getAnalytics(app);
-      }
-    } catch {}
-  })();
+    // Analytics (solo si soportado y si hay measurementId)
+    (async () => {
+      try {
+        if (cfg.measurementId && (await analyticsSupported())) {
+          _analytics = getAnalytics(app);
+        }
+      } catch {}
+    })();
 
-  return { app, auth, db, analytics: _analytics };
+    return { app, auth, db, analytics: _analytics, error: null };
+  } catch (error) {
+    _initializationError = error instanceof Error ? error.message : 'Firebase initialization failed';
+    console.error('Firebase initialization error:', error);
+    return { app: null, auth: null, db: null, analytics: null, error: _initializationError };
+  }
 }
 
 export const googleProvider = new GoogleAuthProvider(); 
