@@ -44,6 +44,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
       
+      if (!auth) {
+        setFirebaseError('Firebase Auth not initialized');
+        setLoading(false);
+        return;
+      }
+      
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         setUser(user);
         setLoading(false);
@@ -65,6 +71,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error(error);
       }
       
+      if (!auth) {
+        throw new Error('Firebase Auth not initialized');
+      }
+      
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error('Error signing in with Google:', error);
@@ -78,6 +88,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error) {
         throw new Error(error);
+      }
+      
+      if (!auth) {
+        throw new Error('Firebase Auth not initialized');
       }
       
       await signOut(auth);

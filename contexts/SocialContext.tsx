@@ -73,7 +73,19 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     }
 
     try {
-      const { db } = firebase();
+      const { db, error } = firebase();
+      
+      if (error) {
+        setError(error);
+        setLoading(false);
+        return;
+      }
+      
+      if (!db) {
+        setError('Firestore not initialized');
+        setLoading(false);
+        return;
+      }
       
       setLoading(true);
       setError(null);
@@ -149,7 +161,16 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db } = firebase();
+      const { db, error } = firebase();
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      if (!db) {
+        throw new Error('Firestore not initialized');
+      }
+      
       await addDoc(collection(db, 'users', user.uid, 'groups'), {
         name,
         updatedAt: serverTimestamp(),
@@ -164,7 +185,16 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db } = firebase();
+      const { db, error } = firebase();
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      if (!db) {
+        throw new Error('Firestore not initialized');
+      }
+      
       const groupRef = doc(db, 'users', user.uid, 'groups', id);
       await updateDoc(groupRef, {
         name,
@@ -180,7 +210,16 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db } = firebase();
+      const { db, error } = firebase();
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      if (!db) {
+        throw new Error('Firestore not initialized');
+      }
+      
       // Delete all names in the group first
       const groupNames = names.filter((name) => name.groupId === id);
       for (const name of groupNames) {
@@ -199,7 +238,16 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db } = firebase();
+      const { db, error } = firebase();
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      if (!db) {
+        throw new Error('Firestore not initialized');
+      }
+      
       await addDoc(collection(db, 'users', user.uid, 'names'), {
         firstName,
         notes,
@@ -216,7 +264,16 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db } = firebase();
+      const { db, error } = firebase();
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      if (!db) {
+        throw new Error('Firestore not initialized');
+      }
+      
       const nameRef = doc(db, 'users', user.uid, 'names', id);
       await updateDoc(nameRef, {
         firstName,
@@ -232,7 +289,16 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db } = firebase();
+      const { db, error } = firebase();
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      if (!db) {
+        throw new Error('Firestore not initialized');
+      }
+      
       await deleteDoc(doc(db, 'users', user.uid, 'names', id));
     } catch (error) {
       console.error('Error deleting name:', error);
@@ -244,7 +310,16 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db } = firebase();
+      const { db, error } = firebase();
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      if (!db) {
+        throw new Error('Firestore not initialized');
+      }
+      
       const nameRef = doc(db, 'users', user.uid, 'names', nameId);
       await updateDoc(nameRef, {
         groupId: newGroupId,
