@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { GroupCard } from '../components/GroupCard';
 import { Modal } from '../components/Modal';
 import { isFirebaseEnabled } from '../lib/config';
+import { missingFirebaseEnv } from '../lib/firebaseGuard';
 
 type SortOption = 'A-Z' | 'Z-A' | 'Recent';
 
@@ -198,7 +199,7 @@ export default function Home() {
   }
 
   // Show error state if there's a Firebase error and Firebase is enabled
-  if (error && isFirebaseEnabled) {
+  if (error && isFirebaseEnabled && missingFirebaseEnv()) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">

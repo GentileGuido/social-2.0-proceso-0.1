@@ -1,6 +1,24 @@
 // lib/firebase.ts
-import { auth, db } from './firebase/client';
-import { GoogleAuthProvider } from 'firebase/auth';
+import { isFirebaseEnabled } from './config';
 
-export { auth, db };
-export const googleProvider = new GoogleAuthProvider(); 
+let auth: any = null;
+let db: any = null;
+let googleProvider: any = null;
+
+async function initializeFirebase() {
+  if (isFirebaseEnabled) {
+    const { auth: authInstance, db: dbInstance } = await import('./firebase/client');
+    const { GoogleAuthProvider } = await import('firebase/auth');
+    
+    auth = authInstance;
+    db = dbInstance;
+    googleProvider = new GoogleAuthProvider();
+  }
+}
+
+// Initialize Firebase if enabled
+if (typeof window !== 'undefined') {
+  initializeFirebase();
+}
+
+export { auth, db, googleProvider }; 
