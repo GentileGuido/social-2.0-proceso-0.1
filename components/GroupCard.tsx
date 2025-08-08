@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ChevronRight, Users, MoreVertical } from 'lucide-react';
+import { Users, MoreVertical, Trash2 } from 'lucide-react';
 import type { Group, Person } from '../types/social';
 
 interface GroupCardProps {
@@ -11,6 +11,8 @@ interface GroupCardProps {
   isDimmed?: boolean;
   onGroupMenu: (e: React.MouseEvent, group: Group) => void;
   onPersonMenu: (e: React.MouseEvent, person: Person, group: Group) => void;
+  onPersonEdit: (person: Person, group: Group) => void;
+  onPersonDelete: (person: Person, group: Group) => void;
 }
 
 export const GroupCard: React.FC<GroupCardProps> = ({
@@ -22,6 +24,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   isDimmed = false,
   onGroupMenu,
   onPersonMenu,
+  onPersonEdit,
+  onPersonDelete,
 }) => {
   // Filter people based on search term
   const filteredPeople = people.filter((person) => {
@@ -42,22 +46,13 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     <div className={`bg-white rounded-lg shadow-sm border border-gray-200 transition-all duration-200 ${
       isDimmed ? 'opacity-30 grayscale' : ''
     }`}>
-      {/* Group Header */}
-      <div className="p-4">
+      {/* Group Header - Entire card clickable */}
+      <div 
+        className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+        onClick={onToggle}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1">
-            <button
-              onClick={onToggle}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
-              aria-label={isExpanded ? 'Contraer grupo' : 'Expandir grupo'}
-            >
-              {isExpanded ? (
-                <ChevronDown size={20} className="text-gray-600" />
-              ) : (
-                <ChevronRight size={20} className="text-gray-600" />
-              )}
-            </button>
-            
             <div className="flex-1">
               <h3 className="font-semibold" style={{ color: 'var(--brand)' }}>{group.name}</h3>
               <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -68,7 +63,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           </div>
           
           <button
-            onClick={(e) => onGroupMenu(e, group)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onGroupMenu(e, group);
+            }}
             className="p-2 hover:bg-gray-100 rounded transition-colors"
             aria-label="Opciones del grupo"
           >
@@ -92,7 +90,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   className="p-4 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex-1">
+                    <div 
+                      className="flex-1 cursor-pointer"
+                      onClick={() => onPersonEdit(person, group)}
+                    >
                       <h4 className="font-medium" style={{ color: 'var(--brand)' }}>{person.name}</h4>
                       {person.notes && (
                         <p className="text-sm text-gray-600 mt-1">{person.notes}</p>
@@ -100,11 +101,14 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                     </div>
                     
                     <button
-                      onClick={(e) => onPersonMenu(e, person, group)}
-                      className="p-2 hover:bg-gray-100 rounded transition-colors"
-                      aria-label={`Opciones de ${person.name}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPersonDelete(person, group);
+                      }}
+                      className="p-2 hover:bg-red-50 rounded transition-colors"
+                      aria-label={`Eliminar ${person.name}`}
                     >
-                      <MoreVertical size={16} className="text-gray-500" />
+                      <Trash2 size={16} className="text-red-500" />
                     </button>
                   </div>
                 </div>

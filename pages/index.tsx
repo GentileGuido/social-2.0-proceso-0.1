@@ -188,11 +188,26 @@ export default function Home() {
     }
   };
 
+  const handlePersonEdit = (person: Person, group: Group) => {
+    console.log('Opening edit person modal for:', person.name);
+    setSelectedPerson(person);
+    setSelectedGroup(group);
+    setShowEditPersonModal(true);
+  };
+
+  const handlePersonDelete = (person: Person, group: Group) => {
+    console.log('Deleting person:', person.name);
+    if (confirm(`¿Estás seguro de que quieres eliminar a "${person.name}"?`)) {
+      deletePerson(group.id, person.id);
+    }
+  };
+
   // Sort groups based on current sort mode
   const sortedGroups = useMemo(() => {
     const arr = [...groups];
     console.log('Sorting groups with mode:', sort, 'Total groups:', arr.length);
     
+    // First, sort by the specified mode
     if (sort === 'az') {
       arr.sort((a,b) => a.name.localeCompare(b.name));
       console.log('Sorted A-Z:', arr.map(g => g.name));
@@ -203,8 +218,16 @@ export default function Home() {
       arr.sort((a,b) => b.updatedAt - a.updatedAt);
       console.log('Sorted by recent:', arr.map(g => g.name));
     }
+
+    // Then, if there are expanded groups, move them to the top
+    if (expandedGroups.size > 0) {
+      const expandedGroupsArray = arr.filter(g => expandedGroups.has(g.id));
+      const collapsedGroupsArray = arr.filter(g => !expandedGroups.has(g.id));
+      return [...expandedGroupsArray, ...collapsedGroupsArray];
+    }
+
     return arr;
-  }, [groups, sort]);
+  }, [groups, sort, expandedGroups]);
 
   if (loading) {
     return (
@@ -283,6 +306,8 @@ export default function Home() {
                   isDimmed={isDimmed}
                   onGroupMenu={(e) => handleGroupMenu(e, group)}
                   onPersonMenu={(e, person) => handlePersonMenu(e, person)}
+                  onPersonEdit={handlePersonEdit}
+                  onPersonDelete={handlePersonDelete}
                 />
               );
             })}
