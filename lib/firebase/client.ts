@@ -1,9 +1,12 @@
 // lib/firebase/client.ts
 import { isFirebaseEnabled } from "../config";
+import type { FirebaseApp } from "firebase/app";
+import type { Auth } from "firebase/auth";
+import type { Firestore } from "firebase/firestore";
 
-let app: any = null;
-let auth: any = null;
-let db: any = null;
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
 
 async function initializeFirebase() {
   if (isFirebaseEnabled && typeof window !== 'undefined') {

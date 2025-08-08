@@ -16,10 +16,6 @@ export default function Home() {
     groups, 
     loading, 
     sort, 
-    addGroup,
-    addPerson,
-    renameGroup,
-    updatePerson,
     deleteGroup, 
     deletePerson, 
     setSort 
