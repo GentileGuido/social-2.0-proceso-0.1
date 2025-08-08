@@ -30,6 +30,7 @@ export type SocialActions = {
   addGroup: (name: string) => void;
   renameGroup: (groupId: string, name: string) => void;
   deleteGroup: (groupId: string) => void;
+  replaceGroup: (groupId: string, newGroupData: Group) => void;
   
   // People
   addPerson: (groupId: string, data: { name: string; notes?: string }) => void;

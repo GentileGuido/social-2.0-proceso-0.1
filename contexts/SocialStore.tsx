@@ -13,6 +13,7 @@ const defaultState: SocialStore = {
   addGroup: () => {},
   renameGroup: () => {},
   deleteGroup: () => {},
+  replaceGroup: () => {},
   addPerson: () => {},
   updatePerson: () => {},
   deletePerson: () => {},
@@ -142,6 +143,22 @@ export const SocialStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }));
   }, []);
 
+  const replaceGroup = useCallback((groupId: string, newGroupData: Group) => {
+    const now = Date.now();
+    setState(prev => ({
+      ...prev,
+      groups: prev.groups.map(group =>
+        group.id === groupId
+          ? {
+              ...newGroupData,
+              id: groupId, // Keep the original ID
+              updatedAt: now,
+            }
+          : group
+      ),
+    }));
+  }, []);
+
   const addPerson = useCallback((groupId: string, data: { name: string; notes?: string }) => {
     const now = Date.now();
     const newPerson: Person = {
@@ -225,6 +242,7 @@ export const SocialStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
     addGroup,
     renameGroup,
     deleteGroup,
+    replaceGroup,
     addPerson,
     updatePerson,
     deletePerson,

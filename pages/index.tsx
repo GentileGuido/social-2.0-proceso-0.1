@@ -18,6 +18,7 @@ export default function Home() {
     sort, 
     deleteGroup, 
     deletePerson, 
+    replaceGroup,
     setSort 
   } = useSocialStore();
   
@@ -188,8 +189,28 @@ export default function Home() {
           const data = JSON.parse(e.target?.result as string);
           console.log('Import group data:', data);
           
-          // TODO: Implement import logic to replace the target group
-          alert(`Se importará el grupo "${data.name}" para reemplazar "${targetGroup.name}". Esta funcionalidad se implementará próximamente.`);
+          // Validate the imported data structure
+          if (!data.name || !Array.isArray(data.people)) {
+            alert('Archivo JSON inválido: debe contener un nombre y una lista de personas');
+            return;
+          }
+          
+          // Show confirmation dialog
+          const confirmed = confirm(
+            `¿Estás seguro de que quieres reemplazar el grupo "${targetGroup.name}" con "${data.name}"?\n\n` +
+            `Esta acción no se puede deshacer y se perderán todos los datos del grupo actual.`
+          );
+          
+          if (confirmed) {
+            // Replace the group with imported data
+            replaceGroup(targetGroup.id, {
+              ...data,
+              id: targetGroup.id, // Keep the original ID
+              createdAt: targetGroup.createdAt, // Keep the original creation date
+            });
+            
+            alert(`Grupo "${targetGroup.name}" reemplazado exitosamente con "${data.name}"`);
+          }
         } catch {
           alert('Archivo JSON inválido');
         }
