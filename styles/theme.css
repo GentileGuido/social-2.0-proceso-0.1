@@ -1,49 +1,71 @@
-:root { --color-primary: #e91e63; }            /* pink default */
-.theme-pink { --color-primary: #e91e63; }
-.theme-teal { --color-primary: #009688; }
-.theme-amber { --color-primary: #FFC107; }
-.theme-neutral { --color-primary: #333333; }
-.theme-red { --color-primary: #F44336; }
-.theme-green { --color-primary: #4CAF50; }
-.theme-blue { --color-primary: #2196F3; }
+:root { 
+  --brand: #e91e63; 
+  --brand-contrast: #fff; 
+  /* default pink */
+}
 
+/* Theme variants */
+body[data-theme='teal'] { --brand: #0ea5b7; }
+body[data-theme='pink'] { --brand: #f43f5e; }
+body[data-theme='yellow'] { --brand: #f59e0b; }
+body[data-theme='charcoal'] { --brand: #374151; }
+body[data-theme='red'] { --brand: #ef4444; }
+body[data-theme='green'] { --brand: #22c55e; }
+body[data-theme='blue'] { --brand: #3b82f6; }
+
+/* FAB styling */
 .fab {
-  background: var(--color-primary);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
   width: 56px;
   height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 9999px;
+  background: var(--brand);
+  color: var(--brand-contrast);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 10px 24px rgba(0,0,0,.2);
+  border: none;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   transition: all 0.2s ease;
 }
 
 .fab:hover {
+  filter: brightness(1.05);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 12px 28px rgba(0,0,0,.25);
 }
 
+/* Color swatches for theme picker */
 .color-swatch {
-  width: 40px; 
+  width: 40px;
   height: 40px;
-  border-radius: 9999px;  /* ← circular */
+  border-radius: 9999px;
   border: 2px solid rgba(0,0,0,.06);
-  cursor: pointer; 
-  display: inline-flex; 
-  align-items: center; 
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
 }
 
 .color-swatch:hover {
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .color-swatch.selected {
-  outline: 3px solid var(--color-primary);
+  outline: 3px solid var(--brand);
   outline-offset: 3px;
+}
+
+/* Color variables for theme preview */
+:root {
+  --color-teal: #0ea5b7;
+  --color-pink: #f43f5e;
+  --color-yellow: #f59e0b;
+  --color-charcoal: #374151;
+  --color-red: #ef4444;
+  --color-green: #22c55e;
+  --color-blue: #3b82f6;
 }

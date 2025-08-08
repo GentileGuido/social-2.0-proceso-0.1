@@ -1,18 +1,15 @@
 import type { AppProps } from 'next/app';
-import { AuthProvider } from '../contexts/AuthContext';
-import { SocialProvider } from '../contexts/SocialContext';
-import { ThemeProvider } from '../contexts/ThemeContext';
+import { SocialStoreProvider } from '../contexts/SocialStore';
+import { ThemeProvider } from '../contexts/ThemeProvider';
 import '../styles/globals.css';
 import '../styles/theme.css';
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <SocialProvider>
-          <Component {...pageProps} />
-        </SocialProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <SocialStoreProvider>
+      <ThemeProvider>
+        <Component {...pageProps} />
+      </ThemeProvider>
+    </SocialStoreProvider>
   );
 } 

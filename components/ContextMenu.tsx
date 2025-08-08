@@ -3,16 +3,16 @@ import { MoreVertical, Download, Edit, Trash2 } from 'lucide-react';
 import { ContextMenuOption } from '../types';
 
 interface ContextMenuProps {
-  isOpen: boolean;
+  x: number;
+  y: number;
   onClose: () => void;
-  position: { x: number; y: number };
   options: ContextMenuOption[];
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
-  isOpen,
+  x,
+  y,
   onClose,
-  position,
   options,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -24,28 +24,16 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       }
     };
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, onClose]);
+  }, [onClose]);
 
-  if (!isOpen) return null;
-
-  const getIcon = (iconName?: string) => {
-    switch (iconName) {
-      case 'download':
-        return <Download size={16} />;
-      case 'edit':
-        return <Edit size={16} />;
-      case 'delete':
-        return <Trash2 size={16} />;
-      default:
-        return <MoreVertical size={16} />;
-    }
+  const getIcon = (icon?: any) => {
+    if (!icon) return <MoreVertical size={16} />;
+    return React.createElement(icon, { size: 16 });
   };
 
   return (
@@ -53,8 +41,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       ref={menuRef}
       className="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[160px]"
       style={{
-        left: position.x,
-        top: position.y,
+        left: x,
+        top: y,
         transform: 'translate(-50%, 8px)',
       }}
     >

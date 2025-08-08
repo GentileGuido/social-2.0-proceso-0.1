@@ -3,15 +3,17 @@ import { Timestamp } from 'firebase/firestore';
 export interface Group {
   id: string;
   name: string;
-  updatedAt: Timestamp;
+  people: any[];
+  createdAt: number;
+  updatedAt: number;
 }
 
-export interface Name {
+export interface Person {
   id: string;
-  firstName: string;
-  notes: string;
-  createdAt: Timestamp;
-  groupId: string;
+  name: string;
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface Theme {
@@ -28,12 +30,12 @@ export interface Theme {
 
 export interface SearchResult {
   groups: Group[];
-  names: Name[];
+  names: Person[];
 }
 
 export interface ContextMenuOption {
   label: string;
   action: () => void;
-  icon?: string;
+  icon?: any;
   danger?: boolean;
 } 

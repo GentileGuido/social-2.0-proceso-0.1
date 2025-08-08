@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title: string;
+  title?: string;
   children: React.ReactNode;
 }
 
@@ -40,19 +40,32 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
       {/* Modal */}
       <div className="relative w-full max-w-md mx-4 bg-white rounded-lg shadow-xl animate-slide-up">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="Close modal"
-          >
-            <X size={20} />
-          </button>
-        </div>
+        {title && (
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Close modal"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        )}
         
         {/* Content */}
-        <div className="p-6">{children}</div>
+        <div className={title ? "p-6" : "p-6"}>
+          {!title && (
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Close modal"
+            >
+              <X size={20} />
+            </button>
+          )}
+          {children}
+        </div>
       </div>
     </div>
   );

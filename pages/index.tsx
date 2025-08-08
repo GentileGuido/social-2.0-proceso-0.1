@@ -1,35 +1,55 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Plus, Settings, Download, Upload, LogOut, User } from 'lucide-react';
-import { useSocial } from '../contexts/SocialContext';
-import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState, useMemo } from 'react';
+import { Search, Plus, Settings, Download, Upload, MoreVertical, Edit, Trash2, User } from 'lucide-react';
+import { useSocialStore } from '../contexts/SocialStore';
+import { useTheme } from '../contexts/ThemeProvider';
 import { GroupCard } from '../components/GroupCard';
 import { Modal } from '../components/Modal';
-import { isFirebaseEnabled, isDemoMode } from '../lib/config';
-import { missingFirebaseEnv } from '../lib/firebaseGuard';
-
-
-
-
+import { ContextMenu } from '../components/ContextMenu';
+import { AddGroupModal } from '../components/modals/AddGroupModal';
+import { AddPersonModal } from '../components/modals/AddPersonModal';
+import { EditGroupModal } from '../components/modals/EditGroupModal';
+import { EditPersonModal } from '../components/modals/EditPersonModal';
+import { ThemePicker } from '../components/ThemePicker';
+import type { Group, Person, SortMode } from '../types/social';
 
 export default function Home() {
-  const { db, loading, sort, theme, createGroup, createPerson, setSort, setTheme: setSocialTheme } = useSocial();
-  const { currentTheme, themes, setTheme } = useTheme();
-  const { user, loading: authLoading, signInWithGoogle, signOutUser } = useAuth();
+  const { 
+    groups, 
+    loading, 
+    sort, 
+    addGroup, 
+    addPerson, 
+    renameGroup, 
+    deleteGroup, 
+    updatePerson, 
+    deletePerson, 
+    setSort 
+  } = useSocialStore();
+  
+  const { currentTheme } = useTheme();
+  
+  // UI State
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddGroupModal, setShowAddGroupModal] = useState(false);
+  const [showAddPersonModal, setShowAddPersonModal] = useState(false);
+  const [showEditGroupModal, setShowEditGroupModal] = useState(false);
+  const [showEditPersonModal, setShowEditPersonModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [modalType, setModalType] = useState<'group' | 'person'>('group');
-  const [selectedGroupId, setSelectedGroupId] = useState('');
-  const [formData, setFormData] = useState({ name: '', personName: '', notes: '' });
-  const [isSaving, setIsSaving] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    type: 'group' | 'person';
+    data: Group | Person;
+  } | null>(null);
 
   // Auto-expand groups with matching people
-  useEffect(() => {
+  React.useEffect(() => {
     if (searchTerm) {
       const matchingGroups = new Set<string>();
-      db.groups.forEach((group) => {
+      groups.forEach((group) => {
         group.people.forEach((person) => {
           if (
             person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -41,7 +61,7 @@ export default function Home() {
       });
       setExpandedGroups(matchingGroups);
     }
-  }, [searchTerm, db.groups]);
+  }, [searchTerm, groups]);
 
   const handleToggleGroup = (groupId: string) => {
     const newExpanded = new Set(expandedGroups);
@@ -57,50 +77,80 @@ export default function Home() {
     const expandedCount = expandedGroups.size;
     if (expandedCount === 0) {
       // No group expanded - add new group
-      setModalType('group');
-      setFormData({ name: '', personName: '', notes: '' });
-      setShowAddModal(true);
+      setShowAddGroupModal(true);
     } else if (expandedCount === 1) {
       // One group expanded - add new person to that group
       const groupId = Array.from(expandedGroups)[0];
-      setModalType('person');
-      setSelectedGroupId(groupId);
-      setFormData({ name: '', personName: '', notes: '' });
-      setShowAddModal(true);
+      const group = groups.find(g => g.id === groupId);
+      if (group) {
+        setSelectedGroup(group);
+        setShowAddPersonModal(true);
+      }
     }
   };
 
-  const [error, setError] = useState<string | null>(null);
+  const handleGroupMenu = (e: React.MouseEvent, group: Group) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      type: 'group',
+      data: group,
+    });
+  };
 
-  const handleAdd = async () => {
-    if (isSaving) return;
-    
-    setIsSaving(true);
-    setError(null);
-    
-    try {
-      if (modalType === 'group' && formData.name.trim()) {
-        await createGroup(formData.name.trim());
-        setShowAddModal(false);
-        setFormData({ name: '', personName: '', notes: '' });
-      } else if (modalType === 'person' && formData.personName.trim() && selectedGroupId) {
-        await createPerson(selectedGroupId, formData.personName.trim(), formData.notes);
-        setShowAddModal(false);
-        setFormData({ name: '', personName: '', notes: '' });
-      } else {
-        setError('Por favor completa todos los campos requeridos');
+  const handlePersonMenu = (e: React.MouseEvent, person: Person, group: Group) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      type: 'person',
+      data: person,
+    });
+  };
+
+  const handleContextMenuAction = (action: string) => {
+    if (!contextMenu) return;
+
+    if (contextMenu.type === 'group') {
+      const group = contextMenu.data as Group;
+      switch (action) {
+        case 'edit':
+          setSelectedGroup(group);
+          setShowEditGroupModal(true);
+          break;
+        case 'delete':
+          if (confirm(`¿Estás seguro de que quieres eliminar el grupo "${group.name}" y todas sus personas?`)) {
+            deleteGroup(group.id);
+          }
+          break;
       }
-    } catch (error) {
-      console.error('Error adding item:', error);
-      setError('No se pudo crear el elemento. Intenta de nuevo.');
-    } finally {
-      setIsSaving(false);
+    } else if (contextMenu.type === 'person') {
+      const person = contextMenu.data as Person;
+      const group = groups.find(g => g.people.some(p => p.id === person.id));
+      if (!group) return;
+
+      switch (action) {
+        case 'edit':
+          setSelectedPerson(person);
+          setSelectedGroup(group);
+          setShowEditPersonModal(true);
+          break;
+        case 'delete':
+          if (confirm(`¿Estás seguro de que quieres eliminar a "${person.name}"?`)) {
+            deletePerson(group.id, person.id);
+          }
+          break;
+      }
     }
+    setContextMenu(null);
   };
 
   const handleExport = () => {
     const data = {
-      groups: db.groups.map((group) => ({
+      groups: groups.map((group) => ({
         id: group.id,
         name: group.name,
         people: group.people,
@@ -127,8 +177,8 @@ export default function Home() {
         try {
           const data = JSON.parse(e.target?.result as string);
           console.log('Import data:', data);
-          // In a real app, you would implement the import logic here
-          alert('La funcionalidad de importación se implementaría aquí');
+          // TODO: Implement import logic
+          alert('La funcionalidad de importación se implementará próximamente');
         } catch {
           alert('Archivo JSON inválido');
         }
@@ -139,70 +189,26 @@ export default function Home() {
 
   // Sort groups based on current sort mode
   const sortedGroups = useMemo(() => {
-    const arr = [...db.groups];
+    const arr = [...groups];
     if (sort === 'az') arr.sort((a,b) => a.name.localeCompare(b.name));
     else if (sort === 'za') arr.sort((a,b) => b.name.localeCompare(a.name));
     else arr.sort((a,b) => b.updatedAt - a.updatedAt);
     return arr;
-  }, [db.groups, sort]);
+  }, [groups, sort]);
 
-  // Show login screen if not authenticated and not in demo mode
-  if (!user && !authLoading && !isDemoMode) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Social</h1>
-            <p className="text-gray-600">Inicia sesión para continuar</p>
-          </div>
-          
-          <button
-            onClick={signInWithGoogle}
-            className="w-full flex items-center justify-center gap-3 border rounded-lg px-4 py-3 transition-colors bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Continuar con Google
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando...</p>
         </div>
       </div>
     );
   }
 
-  // Show error state if there's a Firebase error and Firebase is enabled
-  if (error && isFirebaseEnabled && missingFirebaseEnv()) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-red-600 mb-2">Error de Configuración</h1>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <p className="text-sm text-gray-500">
-              Por favor, verifica que las variables de entorno de Firebase estén configuradas correctamente.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className={`min-h-screen bg-gray-50 theme-${theme}`}>
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -217,35 +223,18 @@ export default function Home() {
                   placeholder="Buscar grupos y personas..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-64"
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64"
                 />
               </div>
               
-              {/* User Menu */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <User size={16} />
-                  <span>{user?.displayName || user?.email}</span>
-                </div>
-                {!isDemoMode && (
-                  <button
-                    onClick={signOutUser}
-                    className="p-2 text-gray-600 hover:text-gray-800 transition-colors"
-                    aria-label="Cerrar sesión"
-                  >
-                    <LogOut size={20} />
-                  </button>
-                )}
-                
-                {/* Settings Button */}
-                <button
-                  onClick={() => setShowSettingsModal(true)}
-                  className="p-2 text-gray-600 hover:text-gray-800 transition-colors"
-                  aria-label="Configuración"
-                >
-                  <Settings size={20} />
-                </button>
-              </div>
+              {/* Settings Button */}
+              <button
+                onClick={() => setShowSettingsModal(true)}
+                className="p-2 text-gray-600 hover:text-gray-800 transition-colors"
+                aria-label="Configuración"
+              >
+                <Settings size={20} />
+              </button>
             </div>
           </div>
         </div>
@@ -253,7 +242,7 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-6">
-        {db.groups.length === 0 ? (
+        {groups.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
               <Search size={48} className="mx-auto" />
@@ -261,11 +250,8 @@ export default function Home() {
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Aún no hay grupos</h2>
             <p className="text-gray-600 mb-6">Crea tu primer grupo para comenzar</p>
             <button
-              onClick={() => {
-                setModalType('group');
-                setShowAddModal(true);
-              }}
-              className="btn-primary"
+              onClick={() => setShowAddGroupModal(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               Crear Grupo
             </button>
@@ -285,6 +271,8 @@ export default function Home() {
                   onToggle={() => handleToggleGroup(group.id)}
                   searchTerm={searchTerm}
                   isDimmed={isDimmed}
+                  onGroupMenu={(e) => handleGroupMenu(e, group)}
+                  onPersonMenu={(e, person) => handlePersonMenu(e, person, group)}
                 />
               );
             })}
@@ -292,92 +280,41 @@ export default function Home() {
         )}
       </main>
 
-      {/* Centered Floating Action Button */}
+      {/* Floating Action Button */}
       <button
         onClick={handleFABClick}
-        className="fab fixed bottom-6 inset-x-0 mx-auto z-30"
+        className="fab"
         aria-label="Agregar nuevo elemento"
       >
         <Plus size={24} />
       </button>
 
-      {/* Add Modal */}
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        title={modalType === 'group' ? 'Agregar Nuevo Grupo' : 'Agregar Nueva Persona'}
-      >
-        <div className="space-y-4">
-          {modalType === 'group' ? (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre del Grupo
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="input-field"
-                placeholder="Ingrese nombre del grupo"
-                autoFocus
-              />
-            </div>
-          ) : (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre
-                </label>
-                <input
-                  type="text"
-                  value={formData.personName}
-                  onChange={(e) => setFormData({ ...formData, personName: e.target.value })}
-                  className="input-field"
-                  placeholder="Ingrese nombre"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notas
-                </label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="input-field"
-                  placeholder="Ingrese notas (opcional)"
-                  rows={3}
-                />
-              </div>
-            </>
-          )}
-          <div className="flex gap-2 justify-end">
-            <button
-              onClick={() => setShowAddModal(false)}
-              className="btn-secondary"
-              disabled={isSaving}
-            >
-              Cancelar
-            </button>
-            {error && (
-              <div className="text-red-600 text-sm mt-2">
-                {error}
-              </div>
-            )}
-            <button
-              onClick={handleAdd}
-              disabled={
-                isSaving ||
-                (modalType === 'group' && !formData.name.trim()) ||
-                (modalType === 'person' && !formData.personName.trim())
-              }
-              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSaving ? 'Guardando...' : 'Agregar'}
-            </button>
-          </div>
-        </div>
-      </Modal>
+      {/* Modals */}
+      <AddGroupModal 
+        isOpen={showAddGroupModal} 
+        onClose={() => setShowAddGroupModal(false)} 
+      />
+      
+      <AddPersonModal 
+        isOpen={showAddPersonModal} 
+        onClose={() => setShowAddPersonModal(false)}
+        groupId={selectedGroup?.id || ''}
+        groupName={selectedGroup?.name || ''}
+      />
+      
+      <EditGroupModal 
+        isOpen={showEditGroupModal} 
+        onClose={() => setShowEditGroupModal(false)}
+        group={selectedGroup}
+      />
+      
+      <EditPersonModal 
+        isOpen={showEditPersonModal} 
+        onClose={() => setShowEditPersonModal(false)}
+        person={selectedPerson}
+        groupId={selectedGroup?.id || ''}
+        groupName={selectedGroup?.name || ''}
+      />
 
       {/* Settings Modal */}
       <Modal
@@ -386,51 +323,17 @@ export default function Home() {
         title="Configuración"
       >
         <div className="space-y-6">
-          {/* Theme Selection */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-3">Tema</h3>
-            <div className="grid grid-cols-7 gap-3">
-              {themes.map((theme) => (
-                <button
-                  key={theme.name}
-                  onClick={() => {
-                    setTheme(theme.name);
-                    const themeMap: Record<string, string> = {
-                      'C': 'teal',
-                      'M': 'pink', 
-                      'Y': 'amber',
-                      'K': 'neutral',
-                      'R': 'red',
-                      'G': 'green',
-                      'B': 'blue'
-                    };
-                    const socialTheme = themeMap[theme.name];
-                    if (socialTheme) {
-                      setSocialTheme(socialTheme);
-                    }
-                  }}
-                  className={`color-swatch ${
-                    currentTheme.name === theme.name ? 'selected' : ''
-                  }`}
-                  title={theme.name}
-                >
-                  <span 
-                    className="w-6 h-6 rounded-full"
-                    style={{ backgroundColor: theme.colors.primary }}
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Theme Picker */}
+          <ThemePicker />
 
           {/* Sorting Options */}
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-3">Ordenar Grupos</h3>
             <div className="space-y-2">
               {([
-                { value: 'az', label: 'A → Z' },
-                { value: 'za', label: 'Z → A' },
-                { value: 'recent', label: 'Recientes' }
+                { value: 'az' as SortMode, label: 'A → Z' },
+                { value: 'za' as SortMode, label: 'Z → A' },
+                { value: 'recent' as SortMode, label: 'Recientes' }
               ]).map((option) => (
                 <label key={option.value} className="flex items-center gap-2">
                   <input
@@ -438,8 +341,8 @@ export default function Home() {
                     name="sort"
                     value={option.value}
                     checked={sort === option.value}
-                                         onChange={(e) => setSort(e.target.value as 'az' | 'za' | 'recent')}
-                    className="text-primary-500 focus:ring-primary-500"
+                    onChange={(e) => setSort(e.target.value as SortMode)}
+                    className="text-blue-500 focus:ring-blue-500"
                   />
                   <span className="text-sm text-gray-700">
                     {option.label}
@@ -474,6 +377,28 @@ export default function Home() {
           </div>
         </div>
       </Modal>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          options={[
+            {
+              label: 'Editar',
+              action: () => handleContextMenuAction('edit'),
+              icon: Edit,
+            },
+            {
+              label: 'Eliminar',
+              action: () => handleContextMenuAction('delete'),
+              icon: Trash2,
+              danger: true,
+            },
+          ]}
+        />
+      )}
     </div>
   );
 } 
