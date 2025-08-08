@@ -104,6 +104,31 @@ interface ThemeProviderProps {
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [currentTheme, setCurrentTheme] = useState<Theme>(themes[0]);
 
+  // Sync with new SocialContext for demo mode
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const { useSocial } = require('./SocialContext');
+        const social = useSocial();
+        const themeMap: Record<string, string> = {
+          'teal': 'C',
+          'pink': 'M',
+          'amber': 'Y', 
+          'neutral': 'K',
+          'red': 'R',
+          'green': 'G',
+          'blue': 'B'
+        };
+        const contextTheme = themeMap[social.theme];
+        if (contextTheme && contextTheme !== currentTheme.name) {
+          setTheme(contextTheme);
+        }
+      } catch (e) {
+        // SocialContext not available yet
+      }
+    }
+  }, [currentTheme.name]);
+
   useEffect(() => {
     // Load theme from localStorage
     const savedTheme = localStorage.getItem('social-theme');
@@ -135,6 +160,29 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     if (theme) {
       setCurrentTheme(theme);
       localStorage.setItem('social-theme', themeName);
+      
+      // Sync with new SocialContext for demo mode
+      if (typeof window !== 'undefined') {
+        try {
+          const { useSocial } = require('./SocialContext');
+          const social = useSocial();
+          const themeMap: Record<string, string> = {
+            'C': 'teal',
+            'M': 'pink', 
+            'Y': 'amber',
+            'K': 'neutral',
+            'R': 'red',
+            'G': 'green',
+            'B': 'blue'
+          };
+          const storeTheme = themeMap[themeName];
+          if (storeTheme) {
+            social.setTheme(storeTheme);
+          }
+        } catch (e) {
+          // SocialContext not available yet
+        }
+      }
     }
   };
 

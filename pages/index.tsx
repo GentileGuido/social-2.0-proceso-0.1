@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Plus, Settings, Download, Upload, LogOut, User } from 'lucide-react';
-import { useSocialData } from '../contexts/SocialContext';
+import { useSocial } from '../contexts/SocialContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { GroupCard } from '../components/GroupCard';
 import { Modal } from '../components/Modal';
 import { isFirebaseEnabled, isDemoMode } from '../lib/config';
 import { missingFirebaseEnv } from '../lib/firebaseGuard';
+import '../styles/theme.css';
 
 type SortOption = 'A-Z' | 'Z-A' | 'Recent';
 
@@ -22,7 +23,7 @@ const getTimestampMillis = (timestamp: any): number => {
 };
 
 export default function Home() {
-  const { groups, people, loading, error, addGroup, addPerson } = useSocialData();
+  const { db, loading, sort, theme, createGroup, createPerson, setSort, setTheme: setSocialTheme } = useSocial();
   const { currentTheme, themes, setTheme } = useTheme();
   const { user, loading: authLoading, signInWithGoogle, signOutUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,17 +40,19 @@ export default function Home() {
   useEffect(() => {
     if (searchTerm) {
       const matchingGroups = new Set<string>();
-      people.forEach((person) => {
-        if (
-          person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (person.notes && person.notes.toLowerCase().includes(searchTerm.toLowerCase()))
-        ) {
-          matchingGroups.add(person.groupId);
-        }
+      db.groups.forEach((group) => {
+        group.people.forEach((person) => {
+          if (
+            person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (person.notes && person.notes.toLowerCase().includes(searchTerm.toLowerCase()))
+          ) {
+            matchingGroups.add(group.id);
+          }
+        });
       });
       setExpandedGroups(matchingGroups);
     }
-  }, [searchTerm, people]);
+  }, [searchTerm, db.groups]);
 
   const handleToggleGroup = (groupId: string) => {
     const newExpanded = new Set(expandedGroups);
@@ -78,23 +81,29 @@ export default function Home() {
     }
   };
 
+  const [error, setError] = useState<string | null>(null);
+
   const handleAdd = async () => {
     if (isSaving) return;
     
     setIsSaving(true);
+    setError(null);
+    
     try {
       if (modalType === 'group' && formData.name.trim()) {
-        await addGroup(formData.name.trim());
+        await createGroup(formData.name.trim());
         setShowAddModal(false);
         setFormData({ name: '', personName: '', notes: '' });
       } else if (modalType === 'person' && formData.personName.trim() && selectedGroupId) {
-        await addPerson(selectedGroupId, formData.personName.trim(), formData.notes);
+        await createPerson(selectedGroupId, formData.personName.trim(), formData.notes);
         setShowAddModal(false);
         setFormData({ name: '', personName: '', notes: '' });
+      } else {
+        setError('Por favor completa todos los campos requeridos');
       }
     } catch (error) {
       console.error('Error adding item:', error);
-      // You could show a toast notification here
+      setError('No se pudo crear el elemento. Intenta de nuevo.');
     } finally {
       setIsSaving(false);
     }
@@ -102,17 +111,11 @@ export default function Home() {
 
   const handleExport = () => {
     const data = {
-      groups: groups.map((group) => ({
+      groups: db.groups.map((group) => ({
         id: group.id,
         name: group.name,
-        updatedAt: group.createdAt,
-      })),
-      people: people.map((person) => ({
-        id: person.id,
-        name: person.name,
-        notes: person.notes,
-        groupId: person.groupId,
-        createdAt: person.createdAt,
+        people: group.people,
+        updatedAt: group.updatedAt,
       })),
     };
 
@@ -145,18 +148,14 @@ export default function Home() {
     }
   };
 
-  const sortedGroups = [...groups].sort((a, b) => {
-    switch (sortOption) {
-      case 'A-Z':
-        return a.name.localeCompare(b.name);
-      case 'Z-A':
-        return b.name.localeCompare(a.name);
-      case 'Recent':
-        return b.createdAt - a.createdAt;
-      default:
-        return 0;
-    }
-  });
+  // Sort groups based on current sort mode
+  const sortedGroups = useMemo(() => {
+    const arr = [...db.groups];
+    if (sort === 'az') arr.sort((a,b) => a.name.localeCompare(b.name));
+    else if (sort === 'za') arr.sort((a,b) => b.name.localeCompare(a.name));
+    else arr.sort((a,b) => b.updatedAt - a.updatedAt);
+    return arr;
+  }, [db.groups, sort]);
 
   // Show login screen if not authenticated and not in demo mode
   if (!user && !authLoading && !isDemoMode) {
@@ -214,7 +213,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen bg-gray-50 theme-${theme}`}>
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -265,7 +264,7 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-6">
-        {groups.length === 0 ? (
+        {db.groups.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
               <Search size={48} className="mx-auto" />
@@ -285,7 +284,6 @@ export default function Home() {
         ) : (
           <div className="space-y-4">
             {sortedGroups.map((group) => {
-              const groupPeople = people.filter((person) => person.groupId === group.id);
               const isExpanded = expandedGroups.has(group.id);
               const isDimmed = expandedGroups.size > 0 && !isExpanded;
               
@@ -293,7 +291,7 @@ export default function Home() {
                 <GroupCard
                   key={group.id}
                   group={group}
-                  people={groupPeople}
+                  people={group.people}
                   isExpanded={isExpanded}
                   onToggle={() => handleToggleGroup(group.id)}
                   searchTerm={searchTerm}
@@ -308,7 +306,7 @@ export default function Home() {
       {/* Centered Floating Action Button */}
       <button
         onClick={handleFABClick}
-        className="fixed bottom-6 inset-x-0 mx-auto w-14 h-14 rounded-full bg-cyan-600 text-white shadow-lg flex items-center justify-center z-30 hover:bg-cyan-700 transition-colors"
+        className="fab fixed bottom-6 inset-x-0 mx-auto z-30"
         aria-label="Agregar nuevo elemento"
       >
         <Plus size={24} />
@@ -372,6 +370,11 @@ export default function Home() {
             >
               Cancelar
             </button>
+            {error && (
+              <div className="text-red-600 text-sm mt-2">
+                {error}
+              </div>
+            )}
             <button
               onClick={handleAdd}
               disabled={
@@ -401,18 +404,31 @@ export default function Home() {
               {themes.map((theme) => (
                 <button
                   key={theme.name}
-                  onClick={() => setTheme(theme.name)}
-                  className={`p-3 rounded-full border-2 transition-colors ${
-                    currentTheme.name === theme.name
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                  onClick={() => {
+                    setTheme(theme.name);
+                    const themeMap: Record<string, string> = {
+                      'C': 'teal',
+                      'M': 'pink', 
+                      'Y': 'amber',
+                      'K': 'neutral',
+                      'R': 'red',
+                      'G': 'green',
+                      'B': 'blue'
+                    };
+                    const socialTheme = themeMap[theme.name];
+                    if (socialTheme) {
+                      setSocialTheme(socialTheme);
+                    }
+                  }}
+                  className={`color-swatch ${
+                    currentTheme.name === theme.name ? 'selected' : ''
                   }`}
                   title={theme.name}
                 >
-                  <div
-                    className="w-full h-8 rounded-full"
+                  <span 
+                    className="w-6 h-6 rounded-full"
                     style={{ backgroundColor: theme.colors.primary }}
-                  ></div>
+                  />
                 </button>
               ))}
             </div>
@@ -422,20 +438,22 @@ export default function Home() {
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-3">Ordenar Grupos</h3>
             <div className="space-y-2">
-              {(['A-Z', 'Z-A', 'Recent'] as SortOption[]).map((option) => (
-                <label key={option} className="flex items-center gap-2">
+              {([
+                { value: 'az', label: 'A → Z' },
+                { value: 'za', label: 'Z → A' },
+                { value: 'recent', label: 'Recientes' }
+              ]).map((option) => (
+                <label key={option.value} className="flex items-center gap-2">
                   <input
                     type="radio"
                     name="sort"
-                    value={option}
-                    checked={sortOption === option}
-                    onChange={(e) => setSortOption(e.target.value as SortOption)}
+                    value={option.value}
+                    checked={sort === option.value}
+                    onChange={(e) => setSort(e.target.value as any)}
                     className="text-primary-500 focus:ring-primary-500"
                   />
                   <span className="text-sm text-gray-700">
-                    {option === 'A-Z' && 'A → Z'}
-                    {option === 'Z-A' && 'Z → A'}
-                    {option === 'Recent' && 'Recientes'}
+                    {option.label}
                   </span>
                 </label>
               ))}

@@ -1,0 +1,49 @@
+:root { --color-primary: #e91e63; }            /* pink default */
+.theme-pink { --color-primary: #e91e63; }
+.theme-teal { --color-primary: #009688; }
+.theme-amber { --color-primary: #FFC107; }
+.theme-neutral { --color-primary: #333333; }
+.theme-red { --color-primary: #F44336; }
+.theme-green { --color-primary: #4CAF50; }
+.theme-blue { --color-primary: #2196F3; }
+
+.fab {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: all 0.2s ease;
+}
+
+.fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+
+.color-swatch {
+  width: 40px; 
+  height: 40px;
+  border-radius: 9999px;  /* ← circular */
+  border: 2px solid rgba(0,0,0,.06);
+  cursor: pointer; 
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.color-swatch:hover {
+  transform: scale(1.1);
+}
+
+.color-swatch.selected {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+}

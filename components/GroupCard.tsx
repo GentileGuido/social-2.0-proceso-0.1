@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { ChevronDown, ChevronRight, Users, MoreVertical } from 'lucide-react';
 import { Group, Person, ContextMenuOption } from '../lib/storage/types';
-import { useSocialData } from '../contexts/SocialContext';
+import { useSocial } from '../contexts/SocialContext';
 import { ContextMenu } from './ContextMenu';
 import { Modal } from './Modal';
 
@@ -22,7 +22,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   searchTerm,
   isDimmed = false,
 }) => {
-  const { updateGroup, deleteGroup, updatePerson, deletePerson, exportGroup, exportPerson, groups } = useSocialData();
+  const { updateGroup, deleteGroup, updatePerson, deletePerson } = useSocial();
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
   const [contextMenuType, setContextMenuType] = useState<'group' | 'person'>('group');
@@ -60,11 +60,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     if (contextMenuType === 'group') {
       return [
         {
-          label: 'Exportar',
-          action: () => exportGroup(group.id),
-          icon: 'download',
-        },
-        {
           label: 'Editar',
           action: () => setEditingGroup(true),
           icon: 'edit',
@@ -82,11 +77,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({
       ];
     } else {
       return [
-        {
-          label: 'Exportar',
-          action: () => exportPerson(contextMenuTargetId),
-          icon: 'download',
-        },
         {
           label: 'Editar',
           action: () => {
@@ -114,14 +104,17 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
   const handleSaveGroup = async () => {
     if (groupName.trim()) {
-      await updateGroup(group.id, groupName.trim());
+      await updateGroup(group.id, { name: groupName.trim() });
       setEditingGroup(false);
     }
   };
 
   const handleSavePerson = async () => {
     if (editingPerson && editingPersonData.name.trim()) {
-      await updatePerson(editingPerson, editingPersonData.name.trim(), editingPersonData.notes);
+      await updatePerson(group.id, editingPerson, { 
+        name: editingPersonData.name.trim(), 
+        notes: editingPersonData.notes 
+      });
       setEditingPerson(null);
       setEditingPersonData({ name: '', notes: '' });
     }
@@ -134,7 +127,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
       if (deletingItem === 'group') {
         await deleteGroup(deletingId);
       } else if (deletingItem === 'person') {
-        await deletePerson(deletingId);
+        await deletePerson(group.id, deletingId);
       }
     } catch (error) {
       console.error('Error deleting item:', error);
