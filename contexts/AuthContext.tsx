@@ -65,12 +65,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } = await import("firebase/auth");
           const { auth, googleProvider } = await import("../lib/firebase");
           
-          const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setUser(user);
-            setLoading(false);
-          });
+          if (auth) {
+            const unsubscribe = onAuthStateChanged(auth, (user) => {
+              setUser(user);
+              setLoading(false);
+            });
 
-          return unsubscribe;
+            return unsubscribe;
+          } else {
+            console.error('Firebase auth not initialized');
+            setLoading(false);
+          }
         } catch (error) {
           console.error('Failed to initialize Firebase:', error);
           setLoading(false);
@@ -94,7 +99,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const { signInWithPopup } = await import("firebase/auth");
         const { auth, googleProvider } = await import("../lib/firebase");
-        await signInWithPopup(auth, googleProvider);
+        if (auth && googleProvider) {
+          await signInWithPopup(auth, googleProvider);
+        } else {
+          throw new Error('Firebase auth not initialized');
+        }
       } catch (error) {
         console.error('Error signing in with Google:', error);
         throw error;
@@ -115,7 +124,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const { signOut } = await import("firebase/auth");
         const { auth } = await import("../lib/firebase");
-        await signOut(auth);
+        if (auth) {
+          await signOut(auth);
+        } else {
+          throw new Error('Firebase auth not initialized');
+        }
       } catch (error) {
         console.error('Error signing out:', error);
         throw error;
