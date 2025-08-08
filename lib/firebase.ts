@@ -1,6 +1,6 @@
 // lib/firebase.ts
-import { initFirebaseAsync } from './firebase/client';
+import { auth, db } from './firebase/client';
 import { GoogleAuthProvider } from 'firebase/auth';
 
-export { initFirebaseAsync };
+export { auth, db };
 export const googleProvider = new GoogleAuthProvider(); 
