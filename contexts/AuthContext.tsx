@@ -5,7 +5,7 @@ import {
   onAuthStateChanged, 
   User 
 } from 'firebase/auth';
-import { auth, googleProvider } from '../lib/firebase';
+import { initFirebaseAsync, googleProvider } from '../lib/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -33,16 +33,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
+    let unsubscribe: (() => void) | undefined;
+    
+    const initAuth = async () => {
+      try {
+        const { auth } = await initFirebaseAsync();
+        unsubscribe = onAuthStateChanged(auth, (user) => {
+          setUser(user);
+          setLoading(false);
+        });
+      } catch (error) {
+        console.error('Failed to initialize Firebase:', error);
+        setLoading(false);
+      }
+    };
 
-    return unsubscribe;
+    initAuth();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async () => {
     try {
+      const { auth } = await initFirebaseAsync();
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error('Error signing in with Google:', error);
@@ -52,6 +67,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signOutUser = async () => {
     try {
+      const { auth } = await initFirebaseAsync();
       await signOut(auth);
     } catch (error) {
       console.error('Error signing out:', error);
