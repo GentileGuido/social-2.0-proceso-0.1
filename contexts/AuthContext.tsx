@@ -10,7 +10,6 @@ import { firebase, googleProvider } from '../lib/firebase';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  firebaseError: string | null;
   signInWithGoogle: () => Promise<void>;
   signOutUser: () => Promise<void>;
 }
@@ -32,49 +31,21 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [firebaseError, setFirebaseError] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const { auth, error } = firebase();
-      
-      if (error) {
-        setFirebaseError(error);
-        setLoading(false);
-        return;
-      }
-      
-      if (!auth) {
-        setFirebaseError('Firebase Auth not initialized');
-        setLoading(false);
-        return;
-      }
-      
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setUser(user);
-        setLoading(false);
-      });
-
-      return unsubscribe;
-    } catch (error) {
-      console.error('Firebase initialization failed:', error);
-      setFirebaseError(error instanceof Error ? error.message : 'Firebase initialization failed');
+    const { auth } = firebase();
+    
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
       setLoading(false);
-    }
+    });
+
+    return unsubscribe;
   }, []);
 
   const signInWithGoogle = async () => {
     try {
-      const { auth, error } = firebase();
-      
-      if (error) {
-        throw new Error(error);
-      }
-      
-      if (!auth) {
-        throw new Error('Firebase Auth not initialized');
-      }
-      
+      const { auth } = firebase();
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error('Error signing in with Google:', error);
@@ -84,16 +55,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signOutUser = async () => {
     try {
-      const { auth, error } = firebase();
-      
-      if (error) {
-        throw new Error(error);
-      }
-      
-      if (!auth) {
-        throw new Error('Firebase Auth not initialized');
-      }
-      
+      const { auth } = firebase();
       await signOut(auth);
     } catch (error) {
       console.error('Error signing out:', error);
@@ -104,7 +66,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     user,
     loading,
-    firebaseError,
     signInWithGoogle,
     signOutUser,
   };

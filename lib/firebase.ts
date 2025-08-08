@@ -1,43 +1,14 @@
 // lib/firebase.ts
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, type Auth } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore";
-import { getAnalytics, type Analytics, isSupported as analyticsSupported } from "firebase/analytics";
-import { getFirebaseEnv } from "./env";
+import { initFirebase } from './firebase/client';
+import { GoogleAuthProvider } from 'firebase/auth';
 
-let _app: FirebaseApp | null = null;
-let _auth: Auth | null = null;
-let _db: Firestore | null = null;
-let _analytics: Analytics | null = null;
-let _initializationError: string | null = null;
+let _firebase: ReturnType<typeof initFirebase> | null = null;
 
 export function firebase() {
-  if (_app) return { app: _app, auth: _auth!, db: _db!, analytics: _analytics, error: _initializationError };
-
-  try {
-    const cfg = getFirebaseEnv(); // lanza error si falta algo
-    const app = getApps().length ? getApp() : initializeApp(cfg);
-
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
-
-    _app = app; _auth = auth; _db = db;
-
-    // Analytics (solo si soportado y si hay measurementId)
-    (async () => {
-      try {
-        if (cfg.measurementId && (await analyticsSupported())) {
-          _analytics = getAnalytics(app);
-        }
-      } catch {}
-    })();
-
-    return { app, auth, db, analytics: _analytics, error: null };
-  } catch (error) {
-    _initializationError = error instanceof Error ? error.message : 'Firebase initialization failed';
-    console.error('Firebase initialization error:', error);
-    return { app: null, auth: null, db: null, analytics: null, error: _initializationError };
+  if (!_firebase) {
+    _firebase = initFirebase();
   }
+  return _firebase;
 }
 
 export const googleProvider = new GoogleAuthProvider(); 

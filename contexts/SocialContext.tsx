@@ -72,105 +72,78 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
       return;
     }
 
-    try {
-      const { db, error } = firebase();
-      
-      if (error) {
-        setError(error);
+    const { db } = firebase();
+    
+    setLoading(true);
+    setError(null);
+
+    // Listen to user-specific groups using the correct structure
+    const userGroupsQuery = query(
+      collection(db, 'users', user.uid, 'groups'),
+      orderBy('updatedAt', 'desc')
+    );
+    
+    const unsubscribeGroups = onSnapshot(
+      userGroupsQuery,
+      (snapshot) => {
+        const groupsData: Group[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          groupsData.push({
+            id: doc.id,
+            name: data.name || '',
+            updatedAt: data.updatedAt || serverTimestamp(),
+          } as Group);
+        });
+        setGroups(groupsData);
         setLoading(false);
-        return;
-      }
-      
-      if (!db) {
-        setError('Firestore not initialized');
+      },
+      (error) => {
+        console.error('Error listening to groups:', error);
+        setError('Failed to load groups');
         setLoading(false);
-        return;
       }
-      
-      setLoading(true);
-      setError(null);
+    );
 
-      // Listen to user-specific groups using the correct structure
-      const userGroupsQuery = query(
-        collection(db, 'users', user.uid, 'groups'),
-        orderBy('updatedAt', 'desc')
-      );
-      
-      const unsubscribeGroups = onSnapshot(
-        userGroupsQuery,
-        (snapshot) => {
-          const groupsData: Group[] = [];
-          snapshot.forEach((doc) => {
-            const data = doc.data();
-            groupsData.push({
-              id: doc.id,
-              name: data.name || '',
-              updatedAt: data.updatedAt || serverTimestamp(),
-            } as Group);
-          });
-          setGroups(groupsData);
-          setLoading(false);
-        },
-        (error) => {
-          console.error('Error listening to groups:', error);
-          setError('Failed to load groups');
-          setLoading(false);
-        }
-      );
+    // Listen to all names across all user groups
+    const userNamesQuery = query(
+      collection(db, 'users', user.uid, 'names'),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const unsubscribeNames = onSnapshot(
+      userNamesQuery,
+      (snapshot) => {
+        const namesData: Name[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          namesData.push({
+            id: doc.id,
+            firstName: data.firstName || '',
+            notes: data.notes || '',
+            groupId: data.groupId || '',
+            createdAt: data.createdAt || serverTimestamp(),
+          } as Name);
+        });
+        setNames(namesData);
+      },
+      (error) => {
+        console.error('Error listening to names:', error);
+        setError('Failed to load names');
+      }
+    );
 
-      // Listen to all names across all user groups
-      const userNamesQuery = query(
-        collection(db, 'users', user.uid, 'names'),
-        orderBy('createdAt', 'desc')
-      );
-      
-      const unsubscribeNames = onSnapshot(
-        userNamesQuery,
-        (snapshot) => {
-          const namesData: Name[] = [];
-          snapshot.forEach((doc) => {
-            const data = doc.data();
-            namesData.push({
-              id: doc.id,
-              firstName: data.firstName || '',
-              notes: data.notes || '',
-              groupId: data.groupId || '',
-              createdAt: data.createdAt || serverTimestamp(),
-            } as Name);
-          });
-          setNames(namesData);
-        },
-        (error) => {
-          console.error('Error listening to names:', error);
-          setError('Failed to load names');
-        }
-      );
-
-      return () => {
-        unsubscribeGroups();
-        unsubscribeNames();
-      };
-    } catch (error) {
-      console.error('Firebase initialization failed:', error);
-      setError('Firebase not initialized. Please check your environment variables.');
-      setLoading(false);
-    }
+    return () => {
+      unsubscribeGroups();
+      unsubscribeNames();
+    };
   }, [user]);
 
   const addGroup = async (name: string) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db, error } = firebase();
-      
-      if (error) {
-        throw new Error(error);
-      }
-      
-      if (!db) {
-        throw new Error('Firestore not initialized');
-      }
-      
+      const { db } = firebase();
       await addDoc(collection(db, 'users', user.uid, 'groups'), {
         name,
         updatedAt: serverTimestamp(),
@@ -185,16 +158,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db, error } = firebase();
-      
-      if (error) {
-        throw new Error(error);
-      }
-      
-      if (!db) {
-        throw new Error('Firestore not initialized');
-      }
-      
+      const { db } = firebase();
       const groupRef = doc(db, 'users', user.uid, 'groups', id);
       await updateDoc(groupRef, {
         name,
@@ -210,16 +174,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db, error } = firebase();
-      
-      if (error) {
-        throw new Error(error);
-      }
-      
-      if (!db) {
-        throw new Error('Firestore not initialized');
-      }
-      
+      const { db } = firebase();
       // Delete all names in the group first
       const groupNames = names.filter((name) => name.groupId === id);
       for (const name of groupNames) {
@@ -238,16 +193,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db, error } = firebase();
-      
-      if (error) {
-        throw new Error(error);
-      }
-      
-      if (!db) {
-        throw new Error('Firestore not initialized');
-      }
-      
+      const { db } = firebase();
       await addDoc(collection(db, 'users', user.uid, 'names'), {
         firstName,
         notes,
@@ -264,16 +210,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db, error } = firebase();
-      
-      if (error) {
-        throw new Error(error);
-      }
-      
-      if (!db) {
-        throw new Error('Firestore not initialized');
-      }
-      
+      const { db } = firebase();
       const nameRef = doc(db, 'users', user.uid, 'names', id);
       await updateDoc(nameRef, {
         firstName,
@@ -289,16 +226,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db, error } = firebase();
-      
-      if (error) {
-        throw new Error(error);
-      }
-      
-      if (!db) {
-        throw new Error('Firestore not initialized');
-      }
-      
+      const { db } = firebase();
       await deleteDoc(doc(db, 'users', user.uid, 'names', id));
     } catch (error) {
       console.error('Error deleting name:', error);
@@ -310,16 +238,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db, error } = firebase();
-      
-      if (error) {
-        throw new Error(error);
-      }
-      
-      if (!db) {
-        throw new Error('Firestore not initialized');
-      }
-      
+      const { db } = firebase();
       const nameRef = doc(db, 'users', user.uid, 'names', nameId);
       await updateDoc(nameRef, {
         groupId: newGroupId,
