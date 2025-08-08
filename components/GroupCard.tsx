@@ -100,16 +100,28 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                       )}
                     </div>
                     
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onPersonDelete(person, group);
-                      }}
-                      className="p-2 hover:bg-red-50 rounded transition-colors"
-                      aria-label={`Eliminar ${person.name}`}
-                    >
-                      <Trash2 size={16} className="text-red-500" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onPersonMenu(e, person, group);
+                        }}
+                        className="p-2 hover:bg-gray-100 rounded transition-colors"
+                        aria-label={`Opciones de ${person.name}`}
+                      >
+                        <MoreVertical size={16} className="text-gray-500" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onPersonDelete(person, group);
+                        }}
+                        className="p-2 hover:bg-red-50 rounded transition-colors"
+                        aria-label={`Eliminar ${person.name}`}
+                      >
+                        <Trash2 size={16} className="text-red-500" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
