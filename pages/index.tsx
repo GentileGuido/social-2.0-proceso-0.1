@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Plus, Settings, Download, Upload, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, Settings, Download, Upload, Edit, Trash2, Info } from 'lucide-react';
 import { useSocialStore } from '../contexts/SocialStore';
 import { GroupCard } from '../components/GroupCard';
 import { Modal } from '../components/Modal';
@@ -29,6 +29,7 @@ export default function Home() {
   const [showEditGroupModal, setShowEditGroupModal] = useState(false);
   const [showEditPersonModal, setShowEditPersonModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [contextMenu, setContextMenu] = useState<{
@@ -412,6 +413,84 @@ export default function Home() {
                 />
               </label>
             </div>
+          </div>
+
+          {/* Information */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-3">Información</h3>
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowInfoModal(true)}
+                className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+              >
+                <Info size={16} />
+                Cómo anclar la web app en tu dock
+              </button>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Info Modal */}
+      <Modal
+        isOpen={showInfoModal}
+        onClose={() => setShowInfoModal(false)}
+        title="Cómo anclar la web app en tu dock"
+      >
+        <div className="space-y-6">
+          {/* Android Instructions */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-3">📱 Android</h3>
+            <div className="space-y-3 text-sm text-gray-700">
+              <p><strong>Chrome:</strong></p>
+              <ol className="list-decimal list-inside space-y-1 ml-4">
+                <li>Abre esta web app en Chrome</li>
+                <li>Toca el menú (tres puntos) en la esquina superior derecha</li>
+                <li>Selecciona "Añadir a pantalla de inicio"</li>
+                <li>Confirma y aparecerá un icono en tu pantalla de inicio</li>
+              </ol>
+              
+              <p className="mt-4"><strong>Samsung Internet:</strong></p>
+              <ol className="list-decimal list-inside space-y-1 ml-4">
+                <li>Abre esta web app en Samsung Internet</li>
+                <li>Toca el menú (tres puntos)</li>
+                <li>Selecciona "Añadir página a" → "Pantalla de inicio"</li>
+                <li>Confirma y aparecerá en tu pantalla de inicio</li>
+              </ol>
+            </div>
+          </div>
+
+          {/* iOS Instructions */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-3">🍎 iOS</h3>
+            <div className="space-y-3 text-sm text-gray-700">
+              <p><strong>Safari:</strong></p>
+              <ol className="list-decimal list-inside space-y-1 ml-4">
+                <li>Abre esta web app en Safari</li>
+                <li>Toca el botón de compartir (cuadrado con flecha hacia arriba)</li>
+                <li>Desplázate hacia abajo y selecciona "Añadir a pantalla de inicio"</li>
+                <li>Confirma y aparecerá un icono en tu pantalla de inicio</li>
+              </ol>
+              
+              <p className="mt-4"><strong>Chrome en iOS:</strong></p>
+              <ol className="list-decimal list-inside space-y-1 ml-4">
+                <li>Abre esta web app en Chrome</li>
+                <li>Toca el menú (tres puntos)</li>
+                <li>Selecciona "Añadir a pantalla de inicio"</li>
+                <li>Confirma y aparecerá en tu pantalla de inicio</li>
+              </ol>
+            </div>
+          </div>
+
+          {/* Benefits */}
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h4 className="font-medium text-blue-900 mb-2">✨ Beneficios de anclar la app:</h4>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>• Acceso rápido desde tu pantalla de inicio</li>
+              <li>• Funciona como una app nativa</li>
+              <li>• No necesitas abrir el navegador cada vez</li>
+              <li>• Experiencia más fluida y rápida</li>
+            </ul>
           </div>
         </div>
       </Modal>
