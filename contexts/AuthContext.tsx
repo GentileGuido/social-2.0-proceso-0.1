@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { isFirebaseEnabled } from "@/lib/config";
+import { isFirebaseEnabled, isDemoMode } from "@/lib/config";
 
 // Mock user type
 type MockUser = { uid: string; displayName: string; email?: string; photoURL?: string | null };
@@ -48,8 +48,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isFirebaseEnabled) {
-      // Mock mode
+    if (isDemoMode) {
+      // Demo mode - auto sign in with mock user
+      const demoUser = { uid: 'demo', displayName: 'Demo User' } as any;
+      setUser(demoUser);
+      setLoading(false);
+    } else if (!isFirebaseEnabled) {
+      // Mock mode (not demo)
       const storedUser = getStoredUser();
       setUser(storedUser);
       setLoading(false);
@@ -77,7 +82,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const signInWithGoogle = async () => {
-    if (!isFirebaseEnabled) {
+    if (isDemoMode) {
+      // Demo mode - no-op, user is already signed in
+      return;
+    } else if (!isFirebaseEnabled) {
       // Mock mode
       const mockUser = await mockSignIn();
       setUser(mockUser);
@@ -95,7 +103,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signOutUser = async () => {
-    if (!isFirebaseEnabled) {
+    if (isDemoMode) {
+      // Demo mode - reset to demo user
+      const demoUser = { uid: 'demo', displayName: 'Demo User' } as any;
+      setUser(demoUser);
+    } else if (!isFirebaseEnabled) {
       // Mock mode
       await mockSignOut();
       setUser(null);

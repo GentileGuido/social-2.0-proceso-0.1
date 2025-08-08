@@ -1,12 +1,16 @@
 // lib/firebase.ts
-import { isFirebaseEnabled } from './config';
+import { isFirebaseEnabled, isDemoMode } from './config';
+
+// Demo mode - export safe stubs
+export const isDemo = isDemoMode;
+export const firebaseEnabled = !isDemoMode && isFirebaseEnabled;
 
 let auth: any = null;
 let db: any = null;
 let googleProvider: any = null;
 
 async function initializeFirebase() {
-  if (isFirebaseEnabled) {
+  if (firebaseEnabled) {
     const { auth: authInstance, db: dbInstance } = await import('./firebase/client');
     const { GoogleAuthProvider } = await import('firebase/auth');
     
@@ -17,7 +21,7 @@ async function initializeFirebase() {
 }
 
 // Initialize Firebase if enabled
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && !isDemoMode) {
   initializeFirebase();
 }
 

@@ -5,7 +5,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { GroupCard } from '../components/GroupCard';
 import { Modal } from '../components/Modal';
-import { isFirebaseEnabled } from '../lib/config';
+import { isFirebaseEnabled, isDemoMode } from '../lib/config';
 import { missingFirebaseEnv } from '../lib/firebaseGuard';
 
 type SortOption = 'A-Z' | 'Z-A' | 'Recent';
@@ -22,36 +22,34 @@ const getTimestampMillis = (timestamp: any): number => {
 };
 
 export default function Home() {
-  const { groups, names, loading, error, addGroup, addName } = useSocialData();
+  const { groups, people, loading, error, addGroup, addPerson } = useSocialData();
   const { currentTheme, themes, setTheme } = useTheme();
   const { user, loading: authLoading, signInWithGoogle, signOutUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [modalType, setModalType] = useState<'group' | 'name'>('group');
+  const [modalType, setModalType] = useState<'group' | 'person'>('group');
   const [selectedGroupId, setSelectedGroupId] = useState('');
-  const [formData, setFormData] = useState({ name: '', firstName: '', notes: '' });
+  const [formData, setFormData] = useState({ name: '', personName: '', notes: '' });
   const [sortOption, setSortOption] = useState<SortOption>('Recent');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Auto-expand groups with matching names
+  // Auto-expand groups with matching people
   useEffect(() => {
     if (searchTerm) {
       const matchingGroups = new Set<string>();
-      names.forEach((name) => {
+      people.forEach((person) => {
         if (
-          name.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (name.notes && name.notes.toLowerCase().includes(searchTerm.toLowerCase()))
+          person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (person.notes && person.notes.toLowerCase().includes(searchTerm.toLowerCase()))
         ) {
-          if (name.groupId) {
-            matchingGroups.add(name.groupId);
-          }
+          matchingGroups.add(person.groupId);
         }
       });
       setExpandedGroups(matchingGroups);
     }
-  }, [searchTerm, names]);
+  }, [searchTerm, people]);
 
   const handleToggleGroup = (groupId: string) => {
     const newExpanded = new Set(expandedGroups);
@@ -68,14 +66,14 @@ export default function Home() {
     if (expandedCount === 0) {
       // No group expanded - add new group
       setModalType('group');
-      setFormData({ name: '', firstName: '', notes: '' });
+      setFormData({ name: '', personName: '', notes: '' });
       setShowAddModal(true);
     } else if (expandedCount === 1) {
-      // One group expanded - add new name to that group
+      // One group expanded - add new person to that group
       const groupId = Array.from(expandedGroups)[0];
-      setModalType('name');
+      setModalType('person');
       setSelectedGroupId(groupId);
-      setFormData({ name: '', firstName: '', notes: '' });
+      setFormData({ name: '', personName: '', notes: '' });
       setShowAddModal(true);
     }
   };
@@ -88,11 +86,11 @@ export default function Home() {
       if (modalType === 'group' && formData.name.trim()) {
         await addGroup(formData.name.trim());
         setShowAddModal(false);
-        setFormData({ name: '', firstName: '', notes: '' });
-      } else if (modalType === 'name' && formData.firstName.trim() && selectedGroupId) {
-        await addName(selectedGroupId, formData.firstName.trim(), formData.notes);
+        setFormData({ name: '', personName: '', notes: '' });
+      } else if (modalType === 'person' && formData.personName.trim() && selectedGroupId) {
+        await addPerson(selectedGroupId, formData.personName.trim(), formData.notes);
         setShowAddModal(false);
-        setFormData({ name: '', firstName: '', notes: '' });
+        setFormData({ name: '', personName: '', notes: '' });
       }
     } catch (error) {
       console.error('Error adding item:', error);
@@ -106,15 +104,15 @@ export default function Home() {
     const data = {
       groups: groups.map((group) => ({
         id: group.id,
-        name: group.title,
+        name: group.name,
         updatedAt: group.createdAt,
       })),
-      names: names.map((name) => ({
-        id: name.id,
-        firstName: name.name,
-        notes: name.notes,
-        groupId: name.groupId || '',
-        createdAt: name.createdAt,
+      people: people.map((person) => ({
+        id: person.id,
+        name: person.name,
+        notes: person.notes,
+        groupId: person.groupId,
+        createdAt: person.createdAt,
       })),
     };
 
@@ -150,9 +148,9 @@ export default function Home() {
   const sortedGroups = [...groups].sort((a, b) => {
     switch (sortOption) {
       case 'A-Z':
-        return a.title.localeCompare(b.title);
+        return a.name.localeCompare(b.name);
       case 'Z-A':
-        return b.title.localeCompare(a.title);
+        return b.name.localeCompare(a.name);
       case 'Recent':
         return b.createdAt - a.createdAt;
       default:
@@ -160,8 +158,8 @@ export default function Home() {
     }
   });
 
-  // Show login screen if not authenticated
-  if (!user && !authLoading) {
+  // Show login screen if not authenticated and not in demo mode
+  if (!user && !authLoading && !isDemoMode) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
@@ -228,7 +226,7 @@ export default function Home() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type="text"
-                  placeholder="Buscar grupos y nombres..."
+                  placeholder="Buscar grupos y personas..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-64"
@@ -241,13 +239,15 @@ export default function Home() {
                   <User size={16} />
                   <span>{user?.displayName || user?.email}</span>
                 </div>
-                <button
-                  onClick={signOutUser}
-                  className="p-2 text-gray-600 hover:text-gray-800 transition-colors"
-                  aria-label="Cerrar sesión"
-                >
-                  <LogOut size={20} />
-                </button>
+                {!isDemoMode && (
+                  <button
+                    onClick={signOutUser}
+                    className="p-2 text-gray-600 hover:text-gray-800 transition-colors"
+                    aria-label="Cerrar sesión"
+                  >
+                    <LogOut size={20} />
+                  </button>
+                )}
                 
                 {/* Settings Button */}
                 <button
@@ -285,7 +285,7 @@ export default function Home() {
         ) : (
           <div className="space-y-4">
             {sortedGroups.map((group) => {
-              const groupNames = names.filter((name) => name.groupId === group.id);
+              const groupPeople = people.filter((person) => person.groupId === group.id);
               const isExpanded = expandedGroups.has(group.id);
               const isDimmed = expandedGroups.size > 0 && !isExpanded;
               
@@ -293,7 +293,7 @@ export default function Home() {
                 <GroupCard
                   key={group.id}
                   group={group}
-                  names={groupNames}
+                  people={groupPeople}
                   isExpanded={isExpanded}
                   onToggle={() => handleToggleGroup(group.id)}
                   searchTerm={searchTerm}
@@ -318,7 +318,7 @@ export default function Home() {
       <Modal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        title={modalType === 'group' ? 'Agregar Nuevo Grupo' : 'Agregar Nuevo Nombre'}
+        title={modalType === 'group' ? 'Agregar Nuevo Grupo' : 'Agregar Nueva Persona'}
       >
         <div className="space-y-4">
           {modalType === 'group' ? (
@@ -343,8 +343,8 @@ export default function Home() {
                 </label>
                 <input
                   type="text"
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  value={formData.personName}
+                  onChange={(e) => setFormData({ ...formData, personName: e.target.value })}
                   className="input-field"
                   placeholder="Ingrese nombre"
                   autoFocus
@@ -377,7 +377,7 @@ export default function Home() {
               disabled={
                 isSaving ||
                 (modalType === 'group' && !formData.name.trim()) ||
-                (modalType === 'name' && !formData.firstName.trim())
+                (modalType === 'person' && !formData.personName.trim())
               }
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >

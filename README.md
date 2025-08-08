@@ -1,224 +1,185 @@
-# Social Web 2.0 - Proceso 0.1
+# Social 2.0 - Proceso 0.1
 
-A modern social networking application built with Next.js, Tailwind CSS, and Firebase. This application allows users to manage groups and names with a beautiful, responsive interface.
+Una aplicación web moderna para gestionar grupos y personas, construida con Next.js, TypeScript y Tailwind CSS.
 
-## 🚀 Features
+## Características
 
-### 🔐 Authentication
-- **Google Sign-In Only**: Users must authenticate using their Google account
-- **Private Data Storage**: Each user has their own private Firestore namespace
-- **Automatic Data Loading**: User data is automatically loaded upon login
+- 🔐 **Autenticación**: Soporte para Google Sign-In con Firebase
+- 👥 **Gestión de Grupos**: Crear, editar y eliminar grupos
+- 👤 **Gestión de Personas**: Agregar personas a grupos con notas
+- 🔍 **Búsqueda**: Búsqueda en tiempo real en grupos y personas
+- 🎨 **Temas**: Múltiples temas visuales
+- 📤 **Exportación**: Exportar datos en formato JSON
+- 📱 **Responsive**: Diseño adaptativo para móviles y desktop
+- 🚀 **Demo Mode**: Modo demo sin Firebase para desarrollo y despliegue
 
-### 🎨 Three-Dot Options Menu
-- **Export**: Download JSON files for individual groups and names
-- **Edit**: Open modals to update group or name text and notes
-- **Delete**: Confirmation prompts before deletion
-- **Settings**: Global three-dot menu with sorting options
+## Modos de Operación
 
-### 🎯 Centered "+" Button
-- **Smart Positioning**: Centered at the bottom of the viewport
-- **Context-Aware**: Creates groups when no group is expanded, adds names when one group is expanded
-- **Auto-Close**: Modals close automatically after successful creation
-- **Styled Design**: Solid colored circle with theme color
+### Modo Demo (Recomendado para Railway)
 
-### 🌓 Dim Other Groups on Expand
-- **Visual Feedback**: When one group is expanded, other groups are dimmed to 50% gray
-- **Focus Enhancement**: Helps users focus on the active group
+Para ejecutar la aplicación sin Firebase, simplemente configura:
 
-### 🎨 Theme Color Selector
-- **Seven Color Options**: C, M, Y, K, R, G, B (Cyan, Magenta, Yellow, Black, Red, Green, Blue)
-- **Circular Buttons**: Clean, modern interface
-- **Persistent Settings**: Theme selection is saved to localStorage
+```bash
+NEXT_PUBLIC_DEMO_MODE=true
+```
 
-### 🌍 Localization
-- **Spanish Interface**: All user-facing text translated to Spanish
-- **Complete Coverage**: Buttons, menus, modals, validation messages, headings
+**Características del modo demo:**
+- ✅ No requiere variables de entorno de Firebase
+- ✅ Autenticación automática con usuario demo
+- ✅ Almacenamiento en localStorage
+- ✅ Funcionalidad completa de grupos y personas
+- ✅ Persistencia de datos en el navegador
+- ✅ Perfecto para despliegues rápidos
 
-### 📱 Responsive Design
-- **Mobile-First**: Optimized for both mobile and desktop screens
-- **Touch-Friendly**: Long-press support for context menus
-- **Adaptive Layout**: Responsive grid and spacing
+### Modo Firebase (Producción)
 
-## 🛠️ Technical Stack
+Para usar Firebase en producción:
 
-- **Framework**: Next.js 14.0.0
-- **Styling**: Tailwind CSS 3.3.5
-- **Database**: Firebase Firestore
-- **Authentication**: Firebase Auth (Google)
-- **Icons**: Lucide React
-- **Language**: TypeScript
+```bash
+NEXT_PUBLIC_DEMO_MODE=false
+NEXT_PUBLIC_ENABLE_FIREBASE=true
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+```
 
-## 📦 Installation
+## Instalación
 
-1. **Clone the repository**
+### Prerrequisitos
+
+- Node.js 18+ 
+- npm o yarn
+
+### Pasos
+
+1. **Clonar el repositorio**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/GentileGuido/social-2.0-proceso-0.1.git
    cd social-2.0-proceso-0.1
    ```
 
-2. **Install dependencies**
+2. **Instalar dependencias**
    ```bash
    npm install
    ```
 
-3. **Set up Firebase**
-   - Create a new Firebase project
-   - Enable Google Authentication
-   - Enable Firestore Database
-   - Copy your Firebase configuration
+3. **Configurar variables de entorno**
 
-4. **Configure environment variables**
+   Para modo demo (recomendado):
    ```bash
-   cp env.example .env.local
-   ```
-   Edit `.env.local` with your Firebase configuration:
-   ```
-   NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=social20proceso01.firebaseapp.com
-   NEXT_PUBLIC_FIREBASE_PROJECT_ID=social20proceso01
-   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=social20proceso01.appspot.com
-   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id_here
-   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id # optional
+   # .env.local
+   NEXT_PUBLIC_DEMO_MODE=true
    ```
 
-5. **Run the development server**
+   Para modo Firebase:
+   ```bash
+   # .env.local
+   NEXT_PUBLIC_DEMO_MODE=false
+   NEXT_PUBLIC_ENABLE_FIREBASE=true
+   NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+   ```
+
+4. **Ejecutar en desarrollo**
    ```bash
    npm run dev
    ```
 
-6. **Build for production**
+5. **Construir para producción**
    ```bash
    npm run build
    npm start
    ```
 
-## 🗂️ Project Structure
+## Despliegue en Railway
+
+### Configuración Rápida (Modo Demo)
+
+1. Conecta tu repositorio a Railway
+2. En las variables de entorno de Railway, agrega:
+   ```
+   NEXT_PUBLIC_DEMO_MODE=true
+   ```
+3. ¡Listo! La app funcionará sin Firebase
+
+### Configuración Completa (Modo Firebase)
+
+1. Configura Firebase en tu proyecto
+2. En Railway, agrega todas las variables de Firebase:
+   ```
+   NEXT_PUBLIC_DEMO_MODE=false
+   NEXT_PUBLIC_ENABLE_FIREBASE=true
+   NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+   # ... resto de variables Firebase
+   ```
+
+## Estructura del Proyecto
 
 ```
 social-2.0-proceso-0.1/
-├── components/
-│   ├── ContextMenu.tsx      # Three-dot options menu
-│   ├── GroupCard.tsx        # Group display component
-│   └── Modal.tsx           # Reusable modal component
-├── contexts/
-│   ├── AuthContext.tsx      # Firebase authentication
-│   ├── SocialContext.tsx    # Data management
-│   └── ThemeContext.tsx     # Theme management
-├── lib/
-│   ├── env.ts              # Environment validation
-│   └── firebase.ts         # Firebase configuration
-├── pages/
-│   ├── _app.tsx            # App wrapper
-│   └── index.tsx           # Main application
-├── styles/
-│   └── globals.css         # Global styles
-└── types/
-    └── index.ts            # TypeScript definitions
+├── components/          # Componentes reutilizables
+│   ├── GroupCard.tsx   # Tarjeta de grupo
+│   ├── Modal.tsx       # Modal genérico
+│   └── ContextMenu.tsx # Menú contextual
+├── contexts/           # Contextos de React
+│   ├── AuthContext.tsx # Autenticación
+│   ├── SocialContext.tsx # Datos sociales
+│   └── ThemeContext.tsx # Temas
+├── lib/               # Utilidades y configuración
+│   ├── config.ts      # Configuración centralizada
+│   ├── firebase.ts    # Configuración Firebase
+│   └── storage/       # Capa de almacenamiento
+│       ├── types.ts   # Tipos de almacenamiento
+│       └── local.ts   # Implementación localStorage
+├── pages/             # Páginas de Next.js
+│   ├── _app.tsx       # App principal
+│   └── index.tsx      # Página principal
+└── styles/            # Estilos globales
+    └── globals.css    # CSS global
 ```
 
-## 🔧 Key Features Implementation
+## Tecnologías
 
-### Environment Validation
-- **Robust ENV Handling**: Sanitizes and validates Firebase environment variables
-- **Unicode Character Handling**: Replaces en-dash/em-dash with hyphens
-- **Whitespace Normalization**: Removes non-breaking spaces and trims values
-- **Build-time Validation**: Errors are caught during initialization
+- **Frontend**: Next.js 14, React 18, TypeScript
+- **Estilos**: Tailwind CSS
+- **Iconos**: Lucide React
+- **Autenticación**: Firebase Auth (opcional)
+- **Almacenamiento**: Firebase Firestore (opcional) / localStorage (demo)
 
-### Firebase Initialization
-- **Singleton Pattern**: Firebase is initialized only once using `getApps()/getApp()`
-- **Error Handling**: Graceful error handling without blocking the UI
-- **Analytics Support**: Optional analytics initialization if measurementId is provided
+## Scripts Disponibles
 
-### Authentication Flow
-- Users are redirected to Google sign-in if not authenticated
-- User data is isolated by `userId` field in Firestore
-- Real-time data synchronization with Firebase
+- `npm run dev` - Servidor de desarrollo
+- `npm run build` - Construcción para producción
+- `npm start` - Servidor de producción
+- `npm run lint` - Linting del código
 
-### Data Management
-- **Groups**: Collections with name, userId, and updatedAt
-- **Names**: Collections with firstName, notes, groupId, userId, and createdAt
-- **Export**: JSON download for individual items
-- **Sorting**: A→Z, Z→A, and Recent options
+## Contribuir
 
-### UI/UX Features
-- **Responsive Design**: Works on all screen sizes
-- **Theme System**: Seven color themes with CSS variables
-- **Loading States**: Smooth loading indicators
-- **Error Handling**: Graceful error messages
-- **Accessibility**: ARIA labels and keyboard navigation
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
 
-## 🎯 Usage
+## Licencia
 
-1. **Sign In**: Click "Continuar con Google" to authenticate
-2. **Create Groups**: Click the "+" button when no group is expanded
-3. **Add Names**: Expand a group and click the "+" button
-4. **Manage Items**: Use the three-dot menu for export, edit, or delete
-5. **Customize**: Access settings to change theme and sorting options
+Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
 
-## 🔒 Security
+## Soporte
 
-- **User Isolation**: All data is scoped to the authenticated user
-- **Firebase Security Rules**: Recommended to implement proper Firestore security rules
-- **Environment Variables**: Sensitive configuration is stored in environment variables
+Si tienes problemas o preguntas:
 
-## 🚀 Deployment
+1. Revisa los issues existentes
+2. Crea un nuevo issue con detalles del problema
+3. Para soporte inmediato, usa el modo demo que no requiere configuración
 
-### Railway Deployment
+---
 
-1. **Connect to Railway**
-   - Connect your GitHub repository to Railway
-   - Railway will automatically detect Next.js
-
-2. **Configure Environment Variables**
-   Add these variables in Railway (Service level, not Shared):
-   ```
-   NEXT_PUBLIC_FIREBASE_API_KEY=AIza...
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=social20proceso01.firebaseapp.com
-   NEXT_PUBLIC_FIREBASE_PROJECT_ID=social20proceso01
-   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=social20proceso01.appspot.com
-   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=863308509063
-   NEXT_PUBLIC_FIREBASE_APP_ID=1:863308509063:web:a5cfc8e50e8f301f3a2d22
-   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-J3PB5L78EH
-   ```
-
-3. **Deploy**
-   - Railway will automatically build and deploy on push to main
-   - The app will be available at your Railway URL
-
-### Firebase Configuration
-
-1. **Authorized Domains**
-   Add these domains to Firebase Auth:
-   - `localhost` (for development)
-   - `social20proceso01.web.app`
-   - `social20proceso01.firebaseapp.com`
-   - `your-railway-app.up.railway.app`
-
-2. **Firestore Rules**
-   ```javascript
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /users/{userId}/{document=**} {
-         allow read, write: if request.auth != null && request.auth.uid == userId;
-       }
-     }
-   }
-   ```
-
-## 📝 License
-
-This project is licensed under the MIT License.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📞 Support
-
-For support or questions, please open an issue in the repository. 
+**Nota**: El modo demo es perfecto para pruebas, desarrollo y despliegues rápidos. Para producción con múltiples usuarios, considera usar el modo Firebase. 

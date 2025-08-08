@@ -1,34 +1,23 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getRepo } from '../data';
-import { Group, NameItem } from '../types/social';
+import { isDemoMode } from "@/lib/config";
+import { createLocalStorageStore } from '../lib/storage/local';
+import type { SocialStorage, Group, Person } from '../lib/storage/types';
 import { useAuth } from './AuthContext';
-
-// Helper function to safely get timestamp milliseconds
-const getTimestampMillis = (timestamp: any): number => {
-  if (!timestamp) return 0;
-  if (timestamp?.toMillis) {
-    return timestamp.toMillis();
-  }
-  if (timestamp?.seconds) {
-    return timestamp.seconds * 1000;
-  }
-  return 0;
-};
 
 interface SocialContextType {
   groups: Group[];
-  names: NameItem[];
+  people: Person[];
   loading: boolean;
   error: string | null;
   addGroup: (name: string) => Promise<void>;
   updateGroup: (id: string, name: string) => Promise<void>;
   deleteGroup: (id: string) => Promise<void>;
-  addName: (groupId: string, firstName: string, notes: string) => Promise<void>;
-  updateName: (id: string, firstName: string, notes: string) => Promise<void>;
-  deleteName: (id: string) => Promise<void>;
-  moveName: (nameId: string, newGroupId: string) => Promise<void>;
+  addPerson: (groupId: string, name: string, notes?: string) => Promise<void>;
+  updatePerson: (id: string, name: string, notes?: string) => Promise<void>;
+  deletePerson: (id: string) => Promise<void>;
+  movePerson: (personId: string, newGroupId: string) => Promise<void>;
   exportGroup: (groupId: string) => void;
-  exportName: (nameId: string) => void;
+  exportPerson: (personId: string) => void;
 }
 
 const SocialContext = createContext<SocialContextType | undefined>(undefined);
@@ -47,55 +36,60 @@ interface SocialProviderProps {
 
 export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
   const [groups, setGroups] = useState<Group[]>([]);
-  const [names, setNames] = useState<NameItem[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  const loadData = async () => {
-    try {
-      const repo = await getRepo();
-      const groupsData = await repo.listGroups();
-      setGroups(groupsData);
-      
-      // Flatten all names from all groups
-      const allNames: NameItem[] = [];
-      groupsData.forEach(group => {
-        group.items.forEach(item => {
-          allNames.push({
-            ...item,
-            groupId: group.id // Add groupId for compatibility
-          });
-        });
-      });
-      setNames(allNames);
-      setError(null);
-    } catch (error) {
-      console.error('Error loading data:', error);
-      setError('Failed to load data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (!user) {
       setGroups([]);
-      setNames([]);
+      setPeople([]);
       setLoading(false);
       return;
     }
 
-    loadData();
+    // Initialize storage based on mode
+    const initializeStorage = async () => {
+      try {
+        let store: SocialStorage;
+        
+        if (isDemoMode) {
+          store = createLocalStorageStore();
+        } else {
+          // For now, use localStorage for both demo and non-demo
+          // In the future, this would switch to Firebase
+          store = createLocalStorageStore();
+        }
+
+        // Subscribe to storage changes
+        const unsubscribe = store.subscribe((newGroups, peopleByGroup) => {
+          setGroups(newGroups);
+          const allPeople = Object.values(peopleByGroup).flat();
+          setPeople(allPeople);
+          setError(null);
+        });
+
+        setLoading(false);
+        
+        // Cleanup subscription on unmount
+        return unsubscribe;
+      } catch (error) {
+        console.error('Error initializing storage:', error);
+        setError('Failed to initialize storage');
+        setLoading(false);
+      }
+    };
+
+    initializeStorage();
   }, [user]);
 
   const addGroup = async (name: string) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const repo = await getRepo();
-      await repo.createGroup(name);
-      await loadData(); // Reload data
+      const store = createLocalStorageStore();
+      await store.addGroup(name);
     } catch (error) {
       console.error('Error adding group:', error);
       throw new Error('Failed to add group');
@@ -106,9 +100,8 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const repo = await getRepo();
-      await repo.renameGroup(id, name);
-      await loadData(); // Reload data
+      const store = createLocalStorageStore();
+      await store.updateGroup(id, name);
     } catch (error) {
       console.error('Error updating group:', error);
       throw new Error('Failed to update group');
@@ -119,98 +112,93 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const repo = await getRepo();
-      await repo.deleteGroup(id);
-      await loadData(); // Reload data
+      const store = createLocalStorageStore();
+      await store.removeGroup(id);
     } catch (error) {
       console.error('Error deleting group:', error);
       throw new Error('Failed to delete group');
     }
   };
 
-  const addName = async (groupId: string, firstName: string, notes: string) => {
+  const addPerson = async (groupId: string, name: string, notes?: string) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const repo = await getRepo();
-      await repo.addName(groupId, firstName, notes);
-      await loadData(); // Reload data
+      const store = createLocalStorageStore();
+      await store.addPerson(groupId, { name, notes });
     } catch (error) {
-      console.error('Error adding name:', error);
-      throw new Error('Failed to add name');
+      console.error('Error adding person:', error);
+      throw new Error('Failed to add person');
     }
   };
 
-  const updateName = async (id: string, firstName: string, notes: string) => {
+  const updatePerson = async (id: string, name: string, notes?: string) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const repo = await getRepo();
-      // Find the group that contains this name
-      const nameItem = names.find(n => n.id === id);
-      if (!nameItem || !nameItem.groupId) throw new Error('Name not found');
+      const store = createLocalStorageStore();
+      // Find the person to get their groupId
+      const person = people.find(p => p.id === id);
+      if (!person) throw new Error('Person not found');
       
-      await repo.updateName(nameItem.groupId, id, { name: firstName, notes });
-      await loadData(); // Reload data
+      await store.updatePerson(person.groupId, id, { name, notes });
     } catch (error) {
-      console.error('Error updating name:', error);
-      throw new Error('Failed to update name');
+      console.error('Error updating person:', error);
+      throw new Error('Failed to update person');
     }
   };
 
-  const deleteName = async (id: string) => {
+  const deletePerson = async (id: string) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const repo = await getRepo();
-      // Find the group that contains this name
-      const nameItem = names.find(n => n.id === id);
-      if (!nameItem || !nameItem.groupId) throw new Error('Name not found');
+      const store = createLocalStorageStore();
+      // Find the person to get their groupId
+      const person = people.find(p => p.id === id);
+      if (!person) throw new Error('Person not found');
       
-      await repo.deleteName(nameItem.groupId, id);
-      await loadData(); // Reload data
+      await store.removePerson(person.groupId, id);
     } catch (error) {
-      console.error('Error deleting name:', error);
-      throw new Error('Failed to delete name');
+      console.error('Error deleting person:', error);
+      throw new Error('Failed to delete person');
     }
   };
 
-  const moveName = async (nameId: string, newGroupId: string) => {
+  const movePerson = async (personId: string, newGroupId: string) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const repo = await getRepo();
-      // Find the name to move
-      const nameItem = names.find(n => n.id === nameId);
-      if (!nameItem || !nameItem.groupId) throw new Error('Name not found');
+      const store = createLocalStorageStore();
+      // Find the person to move
+      const person = people.find(p => p.id === personId);
+      if (!person) throw new Error('Person not found');
       
       // Delete from old group and add to new group
-      await repo.deleteName(nameItem.groupId, nameId);
-      await repo.addName(newGroupId, nameItem.name, nameItem.notes);
-      await loadData(); // Reload data
+      await store.removePerson(person.groupId, personId);
+      await store.addPerson(newGroupId, { name: person.name, notes: person.notes });
     } catch (error) {
-      console.error('Error moving name:', error);
-      throw new Error('Failed to move name');
+      console.error('Error moving person:', error);
+      throw new Error('Failed to move person');
     }
   };
 
   const exportGroup = (groupId: string) => {
     const group = groups.find(g => g.id === groupId);
-    const groupNames = names.filter(n => n.groupId === groupId);
+    const groupPeople = people.filter(p => p.groupId === groupId);
     
     if (!group) return;
 
     const data = {
       group: {
         id: group.id,
-        name: group.title,
+        name: group.name,
         updatedAt: group.createdAt,
       },
-      names: groupNames.map(name => ({
-        id: name.id,
-        firstName: name.name,
-        notes: name.notes,
-        createdAt: name.createdAt,
+      people: groupPeople.map(person => ({
+        id: person.id,
+        name: person.name,
+        notes: person.notes,
+        createdAt: person.createdAt,
       })),
     };
 
@@ -218,29 +206,29 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${group.title}-export.json`;
+    a.download = `${group.name}-export.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  const exportName = (nameId: string) => {
-    const name = names.find(n => n.id === nameId);
-    const group = groups.find(g => g.id === name?.groupId);
+  const exportPerson = (personId: string) => {
+    const person = people.find(p => p.id === personId);
+    const group = groups.find(g => g.id === person?.groupId);
     
-    if (!name || !group) return;
+    if (!person || !group) return;
 
     const data = {
-      name: {
-        id: name.id,
-        firstName: name.name,
-        notes: name.notes,
-        createdAt: name.createdAt,
+      person: {
+        id: person.id,
+        name: person.name,
+        notes: person.notes,
+        createdAt: person.createdAt,
       },
       group: {
         id: group.id,
-        name: group.title,
+        name: group.name,
       },
     };
 
@@ -248,7 +236,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${name.name}-export.json`;
+    a.download = `${person.name}-export.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -257,18 +245,18 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
 
   const value: SocialContextType = {
     groups,
-    names,
+    people,
     loading,
     error,
     addGroup,
     updateGroup,
     deleteGroup,
-    addName,
-    updateName,
-    deleteName,
-    moveName,
+    addPerson,
+    updatePerson,
+    deletePerson,
+    movePerson,
     exportGroup,
-    exportName,
+    exportPerson,
   };
 
   return <SocialContext.Provider value={value}>{children}</SocialContext.Provider>;

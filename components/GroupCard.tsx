@@ -1,13 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { ChevronDown, ChevronRight, Users, MoreVertical } from 'lucide-react';
-import { Group, NameItem, ContextMenuOption } from '../types/social';
+import { Group, Person, ContextMenuOption } from '../lib/storage/types';
 import { useSocialData } from '../contexts/SocialContext';
 import { ContextMenu } from './ContextMenu';
 import { Modal } from './Modal';
 
 interface GroupCardProps {
   group: Group;
-  names: NameItem[];
+  people: Person[];
   isExpanded: boolean;
   onToggle: () => void;
   searchTerm: string;
@@ -16,27 +16,27 @@ interface GroupCardProps {
 
 export const GroupCard: React.FC<GroupCardProps> = ({
   group,
-  names,
+  people,
   isExpanded,
   onToggle,
   searchTerm,
   isDimmed = false,
 }) => {
-  const { updateGroup, deleteGroup, updateName, deleteName, exportGroup, exportName, groups } = useSocialData();
+  const { updateGroup, deleteGroup, updatePerson, deletePerson, exportGroup, exportPerson, groups } = useSocialData();
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
-  const [contextMenuType, setContextMenuType] = useState<'group' | 'name'>('group');
+  const [contextMenuType, setContextMenuType] = useState<'group' | 'person'>('group');
   const [contextMenuTargetId, setContextMenuTargetId] = useState<string>('');
   const [editingGroup, setEditingGroup] = useState(false);
-  const [editingName, setEditingName] = useState<string | null>(null);
-  const [groupName, setGroupName] = useState(group.title);
-  const [editingNameData, setEditingNameData] = useState({ firstName: '', notes: '' });
+  const [editingPerson, setEditingPerson] = useState<string | null>(null);
+  const [groupName, setGroupName] = useState(group.name);
+  const [editingPersonData, setEditingPersonData] = useState({ name: '', notes: '' });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deletingItem, setDeletingItem] = useState<'group' | 'name' | null>(null);
+  const [deletingItem, setDeletingItem] = useState<'group' | 'person' | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const handleContextMenu = (e: React.MouseEvent, type: 'group' | 'name' = 'group', targetId: string = '') => {
+  const handleContextMenu = (e: React.MouseEvent, type: 'group' | 'person' = 'group', targetId: string = '') => {
     e.preventDefault();
     e.stopPropagation();
     setContextMenuPosition({ x: e.clientX, y: e.clientY });
@@ -84,16 +84,16 @@ export const GroupCard: React.FC<GroupCardProps> = ({
       return [
         {
           label: 'Exportar',
-          action: () => exportName(contextMenuTargetId),
+          action: () => exportPerson(contextMenuTargetId),
           icon: 'download',
         },
         {
           label: 'Editar',
           action: () => {
-            const name = names.find(n => n.id === contextMenuTargetId);
-            if (name) {
-              setEditingNameData({ firstName: name.name, notes: name.notes || '' });
-              setEditingName(contextMenuTargetId);
+            const person = people.find(p => p.id === contextMenuTargetId);
+            if (person) {
+              setEditingPersonData({ name: person.name, notes: person.notes || '' });
+              setEditingPerson(contextMenuTargetId);
             }
           },
           icon: 'edit',
@@ -101,7 +101,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
         {
           label: 'Eliminar',
           action: () => {
-            setDeletingItem('name');
+            setDeletingItem('person');
             setDeletingId(contextMenuTargetId);
             setShowDeleteConfirm(true);
           },
@@ -119,11 +119,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     }
   };
 
-  const handleSaveName = async () => {
-    if (editingName && editingNameData.firstName.trim()) {
-      await updateName(editingName, editingNameData.firstName.trim(), editingNameData.notes);
-      setEditingName(null);
-      setEditingNameData({ firstName: '', notes: '' });
+  const handleSavePerson = async () => {
+    if (editingPerson && editingPersonData.name.trim()) {
+      await updatePerson(editingPerson, editingPersonData.name.trim(), editingPersonData.notes);
+      setEditingPerson(null);
+      setEditingPersonData({ name: '', notes: '' });
     }
   };
 
@@ -133,8 +133,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     try {
       if (deletingItem === 'group') {
         await deleteGroup(deletingId);
-      } else if (deletingItem === 'name') {
-        await deleteName(deletingId);
+      } else if (deletingItem === 'person') {
+        await deletePerson(deletingId);
       }
     } catch (error) {
       console.error('Error deleting item:', error);
@@ -145,10 +145,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     }
   };
 
-  const filteredNames = names.filter(
-    (name) =>
-      name.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (name.notes && name.notes.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredPeople = people.filter(
+    (person) =>
+      person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (person.notes && person.notes.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -174,9 +174,9 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
             <div className="flex items-center gap-2">
               <Users size={20} className="text-primary-500" />
-              <h3 className="font-semibold text-gray-900">{group.title}</h3>
+              <h3 className="font-semibold text-gray-900">{group.name}</h3>
             </div>
-            <span className="text-sm text-gray-500">({names.length} nombres)</span>
+            <span className="text-sm text-gray-500">({people.length} personas)</span>
           </div>
           
           {/* Three-dot menu button */}
@@ -192,24 +192,24 @@ export const GroupCard: React.FC<GroupCardProps> = ({
         {/* Names List */}
         {isExpanded && (
           <div className="border-t border-gray-200 bg-gray-50">
-            {filteredNames.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">No hay nombres en este grupo</div>
+            {filteredPeople.length === 0 ? (
+              <div className="p-4 text-center text-gray-500">No hay personas en este grupo</div>
             ) : (
-              filteredNames.map((name) => (
+              filteredPeople.map((person) => (
                 <div
-                  key={name.id}
+                  key={person.id}
                   className="p-4 border-b border-gray-200 last:border-b-0 hover:bg-gray-100 transition-colors flex items-center justify-between"
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">{name.name}</div>
-                    {name.notes && (
-                      <div className="text-sm text-gray-600 mt-1">{name.notes}</div>
+                    <div className="font-medium text-gray-900">{person.name}</div>
+                    {person.notes && (
+                      <div className="text-sm text-gray-600 mt-1">{person.notes}</div>
                     )}
                   </div>
                   
                   {/* Three-dot menu button for names */}
                   <button
-                    onClick={(e) => handleContextMenu(e, 'name', name.id)}
+                    onClick={(e) => handleContextMenu(e, 'person', person.id)}
                     className="p-1 hover:bg-gray-200 rounded-full transition-colors ml-2"
                     aria-label="Opciones del nombre"
                   >
@@ -268,9 +268,9 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
       {/* Edit Name Modal */}
       <Modal
-        isOpen={!!editingName}
-        onClose={() => setEditingName(null)}
-        title="Editar Nombre"
+        isOpen={!!editingPerson}
+        onClose={() => setEditingPerson(null)}
+        title="Editar Persona"
       >
         <div className="space-y-4">
           <div>
@@ -279,8 +279,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             </label>
             <input
               type="text"
-              value={editingNameData.firstName}
-              onChange={(e) => setEditingNameData({ ...editingNameData, firstName: e.target.value })}
+              value={editingPersonData.name}
+              onChange={(e) => setEditingPersonData({ ...editingPersonData, name: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Ingrese nombre"
             />
@@ -290,8 +290,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
               Notas
             </label>
             <textarea
-              value={editingNameData.notes}
-              onChange={(e) => setEditingNameData({ ...editingNameData, notes: e.target.value })}
+              value={editingPersonData.notes}
+              onChange={(e) => setEditingPersonData({ ...editingPersonData, notes: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Ingrese notas (opcional)"
               rows={3}
@@ -299,13 +299,13 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           </div>
           <div className="flex gap-2 justify-end">
             <button
-              onClick={() => setEditingName(null)}
+              onClick={() => setEditingPerson(null)}
               className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
             >
               Cancelar
             </button>
             <button
-              onClick={handleSaveName}
+              onClick={handleSavePerson}
               className="px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors"
             >
               Guardar
