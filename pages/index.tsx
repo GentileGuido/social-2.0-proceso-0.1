@@ -5,6 +5,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { GroupCard } from '../components/GroupCard';
 import { Modal } from '../components/Modal';
+import { isFirebaseEnabled } from '../lib/config';
 
 type SortOption = 'A-Z' | 'Z-A' | 'Recent';
 
@@ -39,10 +40,12 @@ export default function Home() {
       const matchingGroups = new Set<string>();
       names.forEach((name) => {
         if (
-          name.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          name.notes.toLowerCase().includes(searchTerm.toLowerCase())
+          name.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (name.notes && name.notes.toLowerCase().includes(searchTerm.toLowerCase()))
         ) {
-          matchingGroups.add(name.groupId);
+          if (name.groupId) {
+            matchingGroups.add(name.groupId);
+          }
         }
       });
       setExpandedGroups(matchingGroups);
@@ -102,14 +105,14 @@ export default function Home() {
     const data = {
       groups: groups.map((group) => ({
         id: group.id,
-        name: group.name,
-        updatedAt: group.updatedAt,
+        name: group.title,
+        updatedAt: group.createdAt,
       })),
       names: names.map((name) => ({
         id: name.id,
-        firstName: name.firstName,
+        firstName: name.name,
         notes: name.notes,
-        groupId: name.groupId,
+        groupId: name.groupId || '',
         createdAt: name.createdAt,
       })),
     };
@@ -146,11 +149,11 @@ export default function Home() {
   const sortedGroups = [...groups].sort((a, b) => {
     switch (sortOption) {
       case 'A-Z':
-        return a.name.localeCompare(b.name);
+        return a.title.localeCompare(b.title);
       case 'Z-A':
-        return b.name.localeCompare(a.name);
+        return b.title.localeCompare(a.title);
       case 'Recent':
-        return getTimestampMillis(b.updatedAt) - getTimestampMillis(a.updatedAt);
+        return b.createdAt - a.createdAt;
       default:
         return 0;
     }
@@ -194,8 +197,8 @@ export default function Home() {
     );
   }
 
-  // Show error state if there's a Firebase error
-  if (error) {
+  // Show error state if there's a Firebase error and Firebase is enabled
+  if (error && isFirebaseEnabled) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">

@@ -1,18 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  onSnapshot,
-  query,
-  orderBy,
-  serverTimestamp,
-  Timestamp,
-} from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { Group, Name } from '../types';
+import { getRepo } from '../data';
+import { Group, NameItem } from '../types/social';
 import { useAuth } from './AuthContext';
 
 // Helper function to safely get timestamp milliseconds
@@ -29,7 +17,7 @@ const getTimestampMillis = (timestamp: any): number => {
 
 interface SocialContextType {
   groups: Group[];
-  names: Name[];
+  names: NameItem[];
   loading: boolean;
   error: string | null;
   addGroup: (name: string) => Promise<void>;
@@ -59,10 +47,36 @@ interface SocialProviderProps {
 
 export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
   const [groups, setGroups] = useState<Group[]>([]);
-  const [names, setNames] = useState<Name[]>([]);
+  const [names, setNames] = useState<NameItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+
+  const loadData = async () => {
+    try {
+      const repo = await getRepo();
+      const groupsData = await repo.listGroups();
+      setGroups(groupsData);
+      
+      // Flatten all names from all groups
+      const allNames: NameItem[] = [];
+      groupsData.forEach(group => {
+        group.items.forEach(item => {
+          allNames.push({
+            ...item,
+            groupId: group.id // Add groupId for compatibility
+          });
+        });
+      });
+      setNames(allNames);
+      setError(null);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setError('Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -72,79 +86,16 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
-    // Listen to user-specific groups using the correct structure
-    const userGroupsQuery = query(
-      collection(db, 'users', user.uid, 'groups'),
-      orderBy('updatedAt', 'desc')
-    );
-    
-    const unsubscribeGroups = onSnapshot(
-      userGroupsQuery,
-      (snapshot) => {
-        const groupsData: Group[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          groupsData.push({
-            id: doc.id,
-            name: data.name || '',
-            updatedAt: data.updatedAt || serverTimestamp(),
-          } as Group);
-        });
-        setGroups(groupsData);
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Error listening to groups:', error);
-        setError('Failed to load groups');
-        setLoading(false);
-      }
-    );
-
-    // Listen to all names across all user groups
-    const userNamesQuery = query(
-      collection(db, 'users', user.uid, 'names'),
-      orderBy('createdAt', 'desc')
-    );
-    
-    const unsubscribeNames = onSnapshot(
-      userNamesQuery,
-      (snapshot) => {
-        const namesData: Name[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          namesData.push({
-            id: doc.id,
-            firstName: data.firstName || '',
-            notes: data.notes || '',
-            groupId: data.groupId || '',
-            createdAt: data.createdAt || serverTimestamp(),
-          } as Name);
-        });
-        setNames(namesData);
-      },
-      (error) => {
-        console.error('Error listening to names:', error);
-        setError('Failed to load names');
-      }
-    );
-
-    return () => {
-      unsubscribeGroups();
-      unsubscribeNames();
-    };
+    loadData();
   }, [user]);
 
   const addGroup = async (name: string) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      await addDoc(collection(db, 'users', user.uid, 'groups'), {
-        name,
-        updatedAt: serverTimestamp(),
-      });
+      const repo = await getRepo();
+      await repo.createGroup(name);
+      await loadData(); // Reload data
     } catch (error) {
       console.error('Error adding group:', error);
       throw new Error('Failed to add group');
@@ -155,11 +106,9 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const groupRef = doc(db, 'users', user.uid, 'groups', id);
-      await updateDoc(groupRef, {
-        name,
-        updatedAt: serverTimestamp(),
-      });
+      const repo = await getRepo();
+      await repo.renameGroup(id, name);
+      await loadData(); // Reload data
     } catch (error) {
       console.error('Error updating group:', error);
       throw new Error('Failed to update group');
@@ -170,14 +119,9 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      // Delete all names in the group first
-      const groupNames = names.filter((name) => name.groupId === id);
-      for (const name of groupNames) {
-        await deleteDoc(doc(db, 'users', user.uid, 'names', name.id));
-      }
-      
-      // Delete the group
-      await deleteDoc(doc(db, 'users', user.uid, 'groups', id));
+      const repo = await getRepo();
+      await repo.deleteGroup(id);
+      await loadData(); // Reload data
     } catch (error) {
       console.error('Error deleting group:', error);
       throw new Error('Failed to delete group');
@@ -188,12 +132,9 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      await addDoc(collection(db, 'users', user.uid, 'names'), {
-        firstName,
-        notes,
-        groupId,
-        createdAt: serverTimestamp(),
-      });
+      const repo = await getRepo();
+      await repo.addName(groupId, firstName, notes);
+      await loadData(); // Reload data
     } catch (error) {
       console.error('Error adding name:', error);
       throw new Error('Failed to add name');
@@ -204,11 +145,13 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const nameRef = doc(db, 'users', user.uid, 'names', id);
-      await updateDoc(nameRef, {
-        firstName,
-        notes,
-      });
+      const repo = await getRepo();
+      // Find the group that contains this name
+      const nameItem = names.find(n => n.id === id);
+      if (!nameItem || !nameItem.groupId) throw new Error('Name not found');
+      
+      await repo.updateName(nameItem.groupId, id, { name: firstName, notes });
+      await loadData(); // Reload data
     } catch (error) {
       console.error('Error updating name:', error);
       throw new Error('Failed to update name');
@@ -219,7 +162,13 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      await deleteDoc(doc(db, 'users', user.uid, 'names', id));
+      const repo = await getRepo();
+      // Find the group that contains this name
+      const nameItem = names.find(n => n.id === id);
+      if (!nameItem || !nameItem.groupId) throw new Error('Name not found');
+      
+      await repo.deleteName(nameItem.groupId, id);
+      await loadData(); // Reload data
     } catch (error) {
       console.error('Error deleting name:', error);
       throw new Error('Failed to delete name');
@@ -230,10 +179,15 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const nameRef = doc(db, 'users', user.uid, 'names', nameId);
-      await updateDoc(nameRef, {
-        groupId: newGroupId,
-      });
+      const repo = await getRepo();
+      // Find the name to move
+      const nameItem = names.find(n => n.id === nameId);
+      if (!nameItem || !nameItem.groupId) throw new Error('Name not found');
+      
+      // Delete from old group and add to new group
+      await repo.deleteName(nameItem.groupId, nameId);
+      await repo.addName(newGroupId, nameItem.name, nameItem.notes);
+      await loadData(); // Reload data
     } catch (error) {
       console.error('Error moving name:', error);
       throw new Error('Failed to move name');
@@ -249,12 +203,12 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     const data = {
       group: {
         id: group.id,
-        name: group.name,
-        updatedAt: group.updatedAt,
+        name: group.title,
+        updatedAt: group.createdAt,
       },
       names: groupNames.map(name => ({
         id: name.id,
-        firstName: name.firstName,
+        firstName: name.name,
         notes: name.notes,
         createdAt: name.createdAt,
       })),
@@ -264,7 +218,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${group.name}-export.json`;
+    a.download = `${group.title}-export.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -280,13 +234,13 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     const data = {
       name: {
         id: name.id,
-        firstName: name.firstName,
+        firstName: name.name,
         notes: name.notes,
         createdAt: name.createdAt,
       },
       group: {
         id: group.id,
-        name: group.name,
+        name: group.title,
       },
     };
 
@@ -294,7 +248,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${name.firstName}-export.json`;
+    a.download = `${name.name}-export.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

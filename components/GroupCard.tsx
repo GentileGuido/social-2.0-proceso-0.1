@@ -1,13 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { ChevronDown, ChevronRight, Users, MoreVertical } from 'lucide-react';
-import { Group, Name, ContextMenuOption } from '../types';
+import { Group, NameItem, ContextMenuOption } from '../types/social';
 import { useSocialData } from '../contexts/SocialContext';
 import { ContextMenu } from './ContextMenu';
 import { Modal } from './Modal';
 
 interface GroupCardProps {
   group: Group;
-  names: Name[];
+  names: NameItem[];
   isExpanded: boolean;
   onToggle: () => void;
   searchTerm: string;
@@ -29,7 +29,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   const [contextMenuTargetId, setContextMenuTargetId] = useState<string>('');
   const [editingGroup, setEditingGroup] = useState(false);
   const [editingName, setEditingName] = useState<string | null>(null);
-  const [groupName, setGroupName] = useState(group.name);
+  const [groupName, setGroupName] = useState(group.title);
   const [editingNameData, setEditingNameData] = useState({ firstName: '', notes: '' });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingItem, setDeletingItem] = useState<'group' | 'name' | null>(null);
@@ -92,7 +92,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           action: () => {
             const name = names.find(n => n.id === contextMenuTargetId);
             if (name) {
-              setEditingNameData({ firstName: name.firstName, notes: name.notes });
+              setEditingNameData({ firstName: name.name, notes: name.notes || '' });
               setEditingName(contextMenuTargetId);
             }
           },
@@ -147,8 +147,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({
 
   const filteredNames = names.filter(
     (name) =>
-      name.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      name.notes.toLowerCase().includes(searchTerm.toLowerCase())
+      name.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (name.notes && name.notes.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -174,7 +174,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
             <div className="flex items-center gap-2">
               <Users size={20} className="text-primary-500" />
-              <h3 className="font-semibold text-gray-900">{group.name}</h3>
+              <h3 className="font-semibold text-gray-900">{group.title}</h3>
             </div>
             <span className="text-sm text-gray-500">({names.length} nombres)</span>
           </div>
@@ -201,7 +201,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                   className="p-4 border-b border-gray-200 last:border-b-0 hover:bg-gray-100 transition-colors flex items-center justify-between"
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">{name.firstName}</div>
+                    <div className="font-medium text-gray-900">{name.name}</div>
                     {name.notes && (
                       <div className="text-sm text-gray-600 mt-1">{name.notes}</div>
                     )}
