@@ -16,7 +16,7 @@ body[data-theme='blue'] { --brand: #3b82f6; }
 /* FAB styling */
 .fab {
   position: fixed;
-  right: 24px;
+  left: 50%;
   bottom: 24px;
   width: 56px;
   height: 56px;
@@ -31,6 +31,7 @@ body[data-theme='blue'] { --brand: #3b82f6; }
   cursor: pointer;
   transition: all 0.2s ease;
   z-index: 1000;
+  transform: translateX(-50%);
 }
 
 .fab:hover {

@@ -33,9 +33,14 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     );
   });
 
+  // Sort people alphabetically
+  const sortedPeople = [...filteredPeople].sort((a, b) => 
+    a.name.localeCompare(b.name)
+  );
+
   return (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-200 transition-all duration-200 ${
-      isDimmed ? 'opacity-50' : ''
+      isDimmed ? 'opacity-30 grayscale' : ''
     }`}>
       {/* Group Header */}
       <div className="p-4">
@@ -75,13 +80,13 @@ export const GroupCard: React.FC<GroupCardProps> = ({
       {/* People List */}
       {isExpanded && (
         <div className="border-t border-gray-100">
-          {filteredPeople.length === 0 ? (
+          {sortedPeople.length === 0 ? (
             <div className="p-4 text-center text-gray-500">
               {searchTerm ? 'No se encontraron personas' : 'No hay personas en este grupo'}
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {filteredPeople.map((person) => (
+              {sortedPeople.map((person) => (
                 <div
                   key={person.id}
                   className="p-4 hover:bg-gray-50 transition-colors"
