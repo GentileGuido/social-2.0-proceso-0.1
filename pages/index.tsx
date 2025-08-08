@@ -30,6 +30,7 @@ export default function Home() {
   const [showEditPersonModal, setShowEditPersonModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showImportGroupModal, setShowImportGroupModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [contextMenu, setContextMenu] = useState<{
@@ -126,6 +127,15 @@ export default function Home() {
             deleteGroup(group.id);
           }
           break;
+        case 'export':
+          console.log('Exporting group:', group.name);
+          handleExportGroup(group);
+          break;
+        case 'import':
+          console.log('Opening import modal for group:', group.name);
+          setSelectedGroup(group);
+          setShowImportGroupModal(true);
+          break;
       }
     } else if (contextMenu.type === 'person') {
       const person = contextMenu.data as Person;
@@ -150,37 +160,36 @@ export default function Home() {
     setContextMenu(null);
   };
 
-  const handleExport = () => {
+  const handleExportGroup = (group: Group) => {
     const data = {
-      groups: groups.map((group) => ({
-        id: group.id,
-        name: group.name,
-        people: group.people,
-        updatedAt: group.updatedAt,
-      })),
+      id: group.id,
+      name: group.name,
+      people: group.people,
+      updatedAt: group.updatedAt,
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'social-data.json';
+    a.download = `${group.name}-data.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportGroup = (event: React.ChangeEvent<HTMLInputElement>, targetGroup: Group) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const data = JSON.parse(e.target?.result as string);
-          console.log('Import data:', data);
-          // TODO: Implement import logic
-          alert('La funcionalidad de importación se implementará próximamente');
+          console.log('Import group data:', data);
+          
+          // TODO: Implement import logic to replace the target group
+          alert(`Se importará el grupo "${data.name}" para reemplazar "${targetGroup.name}". Esta funcionalidad se implementará próximamente.`);
         } catch {
           alert('Archivo JSON inválido');
         }
@@ -391,29 +400,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Import/Export */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-3">Gestión de Datos</h3>
-            <div className="space-y-2">
-              <button
-                onClick={handleExport}
-                className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
-              >
-                <Download size={16} />
-                Exportar Datos
-              </button>
-              <label className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-700 hover:bg-gray-100 rounded-md transition-colors cursor-pointer">
-                <Upload size={16} />
-                Importar Datos
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImport}
-                  className="hidden"
-                />
-              </label>
-            </div>
-          </div>
+          
 
           {/* Information */}
           <div>
@@ -428,6 +415,34 @@ export default function Home() {
               </button>
             </div>
           </div>
+        </div>
+      </Modal>
+
+      {/* Import Group Modal */}
+      <Modal
+        isOpen={showImportGroupModal}
+        onClose={() => setShowImportGroupModal(false)}
+        title={`Importar Grupo - ${selectedGroup?.name || ''}`}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Selecciona un archivo JSON para importar y reemplazar el grupo &quot;{selectedGroup?.name}&quot;.
+          </p>
+          <label className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-700 hover:bg-gray-100 rounded-md transition-colors cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <Upload size={20} />
+            Seleccionar archivo JSON
+            <input
+              type="file"
+              accept=".json"
+              onChange={(e) => {
+                if (selectedGroup) {
+                  handleImportGroup(e, selectedGroup);
+                }
+                setShowImportGroupModal(false);
+              }}
+              className="hidden"
+            />
+          </label>
         </div>
       </Modal>
 
@@ -450,13 +465,7 @@ export default function Home() {
                 <li>Confirma y aparecerá un icono en tu pantalla de inicio</li>
               </ol>
               
-              <p className="mt-4"><strong>Samsung Internet:</strong></p>
-              <ol className="list-decimal list-inside space-y-1 ml-4">
-                <li>Abre esta web app en Samsung Internet</li>
-                <li>Toca el menú (tres puntos)</li>
-                <li>Selecciona &quot;Añadir página a&quot; → &quot;Pantalla de inicio&quot;</li>
-                <li>Confirma y aparecerá en tu pantalla de inicio</li>
-              </ol>
+              
             </div>
           </div>
 
@@ -482,16 +491,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Benefits */}
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h4 className="font-medium text-blue-900 mb-2">✨ Beneficios de anclar la app:</h4>
-            <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Acceso rápido desde tu pantalla de inicio</li>
-              <li>• Funciona como una app nativa</li>
-              <li>• No necesitas abrir el navegador cada vez</li>
-              <li>• Experiencia más fluida y rápida</li>
-            </ul>
-          </div>
+          
         </div>
       </Modal>
 
@@ -506,6 +506,16 @@ export default function Home() {
               label: 'Editar',
               action: () => handleContextMenuAction('edit'),
               icon: Edit,
+            },
+            {
+              label: 'Exportar Grupo',
+              action: () => handleContextMenuAction('export'),
+              icon: Download,
+            },
+            {
+              label: 'Importar Grupo',
+              action: () => handleContextMenuAction('import'),
+              icon: Upload,
             },
             {
               label: 'Eliminar',
