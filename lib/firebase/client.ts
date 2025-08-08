@@ -57,7 +57,7 @@ export const analyticsPromise = isFirebaseEnabled && typeof window !== "undefine
   ? (async () => {
       const { getAnalytics, isSupported } = await import("firebase/analytics");
       const supported = await isSupported();
-      return supported ? getAnalytics(app) : null;
+      return supported && app ? getAnalytics(app) : null;
     })()
   : Promise.resolve(null);
 
