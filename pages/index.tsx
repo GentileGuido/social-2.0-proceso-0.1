@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Plus, Settings, Download, Upload, MoreVertical, Edit, Trash2, User } from 'lucide-react';
+import { Search, Plus, Settings, Download, Upload, Edit, Trash2 } from 'lucide-react';
 import { useSocialStore } from '../contexts/SocialStore';
-import { useTheme } from '../contexts/ThemeProvider';
 import { GroupCard } from '../components/GroupCard';
 import { Modal } from '../components/Modal';
 import { ContextMenu } from '../components/ContextMenu';
@@ -17,16 +16,10 @@ export default function Home() {
     groups, 
     loading, 
     sort, 
-    addGroup, 
-    addPerson, 
-    renameGroup, 
     deleteGroup, 
-    updatePerson, 
     deletePerson, 
     setSort 
   } = useSocialStore();
-  
-  const { currentTheme } = useTheme();
   
   // UI State
   const [searchTerm, setSearchTerm] = useState('');
@@ -100,7 +93,7 @@ export default function Home() {
     });
   };
 
-  const handlePersonMenu = (e: React.MouseEvent, person: Person, group: Group) => {
+  const handlePersonMenu = (e: React.MouseEvent, person: Person) => {
     e.preventDefault();
     e.stopPropagation();
     setContextMenu({
@@ -272,7 +265,7 @@ export default function Home() {
                   searchTerm={searchTerm}
                   isDimmed={isDimmed}
                   onGroupMenu={(e) => handleGroupMenu(e, group)}
-                  onPersonMenu={(e, person) => handlePersonMenu(e, person, group)}
+                  onPersonMenu={(e, person) => handlePersonMenu(e, person)}
                 />
               );
             })}

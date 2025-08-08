@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../Modal';
 import { useSocialStore } from '../../contexts/SocialStore';
-import type { Group } from '../../types/social';
 
 interface AddPersonModalProps {
   isOpen: boolean;

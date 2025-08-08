@@ -36,6 +36,6 @@ export interface SearchResult {
 export interface ContextMenuOption {
   label: string;
   action: () => void;
-  icon?: any;
+  icon?: React.ComponentType<{ size?: number | string }>;
   danger?: boolean;
 } 

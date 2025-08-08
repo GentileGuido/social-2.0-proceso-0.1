@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { MoreVertical, Download, Edit, Trash2 } from 'lucide-react';
+import { MoreVertical } from 'lucide-react';
 import { ContextMenuOption } from '../types';
 
 interface ContextMenuProps {
@@ -31,7 +31,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     };
   }, [onClose]);
 
-  const getIcon = (icon?: any) => {
+  const getIcon = (icon?: React.ComponentType<{ size?: number | string }>) => {
     if (!icon) return <MoreVertical size={16} />;
     return React.createElement(icon, { size: 16 });
   };
