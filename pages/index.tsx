@@ -446,7 +446,7 @@ export default function Home() {
               <ol className="list-decimal list-inside space-y-1 ml-4">
                 <li>Abre esta web app en Chrome</li>
                 <li>Toca el menú (tres puntos) en la esquina superior derecha</li>
-                <li>Selecciona "Añadir a pantalla de inicio"</li>
+                <li>Selecciona &quot;Añadir a pantalla de inicio&quot;</li>
                 <li>Confirma y aparecerá un icono en tu pantalla de inicio</li>
               </ol>
               
@@ -454,7 +454,7 @@ export default function Home() {
               <ol className="list-decimal list-inside space-y-1 ml-4">
                 <li>Abre esta web app en Samsung Internet</li>
                 <li>Toca el menú (tres puntos)</li>
-                <li>Selecciona "Añadir página a" → "Pantalla de inicio"</li>
+                <li>Selecciona &quot;Añadir página a&quot; → &quot;Pantalla de inicio&quot;</li>
                 <li>Confirma y aparecerá en tu pantalla de inicio</li>
               </ol>
             </div>
@@ -468,7 +468,7 @@ export default function Home() {
               <ol className="list-decimal list-inside space-y-1 ml-4">
                 <li>Abre esta web app en Safari</li>
                 <li>Toca el botón de compartir (cuadrado con flecha hacia arriba)</li>
-                <li>Desplázate hacia abajo y selecciona "Añadir a pantalla de inicio"</li>
+                <li>Desplázate hacia abajo y selecciona &quot;Añadir a pantalla de inicio&quot;</li>
                 <li>Confirma y aparecerá un icono en tu pantalla de inicio</li>
               </ol>
               
@@ -476,7 +476,7 @@ export default function Home() {
               <ol className="list-decimal list-inside space-y-1 ml-4">
                 <li>Abre esta web app en Chrome</li>
                 <li>Toca el menú (tres puntos)</li>
-                <li>Selecciona "Añadir a pantalla de inicio"</li>
+                <li>Selecciona &quot;Añadir a pantalla de inicio&quot;</li>
                 <li>Confirma y aparecerá en tu pantalla de inicio</li>
               </ol>
             </div>
