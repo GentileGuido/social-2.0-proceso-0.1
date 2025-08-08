@@ -23,8 +23,9 @@ body[data-theme='blue'] { --brand: #3b82f6; }
   border-radius: 50%;
   background: var(--brand);
   color: var(--brand-contrast);
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   box-shadow: 0 10px 24px rgba(0,0,0,.2);
   border: none;
   cursor: pointer;

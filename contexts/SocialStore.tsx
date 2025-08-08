@@ -216,6 +216,7 @@ export const SocialStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, []);
 
   const setSort = useCallback((sort: SortMode) => {
+    console.log('Setting sort to:', sort);
     setState(prev => ({ ...prev, sort }));
   }, []);
 

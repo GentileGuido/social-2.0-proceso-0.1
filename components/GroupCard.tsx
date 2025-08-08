@@ -54,7 +54,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
             </button>
             
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900">{group.name}</h3>
+              <h3 className="font-semibold" style={{ color: 'var(--brand)' }}>{group.name}</h3>
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Users size={14} />
                 <span>{people.length} persona{people.length !== 1 ? 's' : ''}</span>
@@ -88,7 +88,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{person.name}</h4>
+                      <h4 className="font-medium" style={{ color: 'var(--brand)' }}>{person.name}</h4>
                       {person.notes && (
                         <p className="text-sm text-gray-600 mt-1">{person.notes}</p>
                       )}

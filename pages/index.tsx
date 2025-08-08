@@ -195,9 +195,18 @@ export default function Home() {
   // Sort groups based on current sort mode
   const sortedGroups = useMemo(() => {
     const arr = [...groups];
-    if (sort === 'az') arr.sort((a,b) => a.name.localeCompare(b.name));
-    else if (sort === 'za') arr.sort((a,b) => b.name.localeCompare(a.name));
-    else arr.sort((a,b) => b.updatedAt - a.updatedAt);
+    console.log('Sorting groups with mode:', sort, 'Total groups:', arr.length);
+    
+    if (sort === 'az') {
+      arr.sort((a,b) => a.name.localeCompare(b.name));
+      console.log('Sorted A-Z:', arr.map(g => g.name));
+    } else if (sort === 'za') {
+      arr.sort((a,b) => b.name.localeCompare(a.name));
+      console.log('Sorted Z-A:', arr.map(g => g.name));
+    } else {
+      arr.sort((a,b) => b.updatedAt - a.updatedAt);
+      console.log('Sorted by recent:', arr.map(g => g.name));
+    }
     return arr;
   }, [groups, sort]);
 
@@ -346,7 +355,10 @@ export default function Home() {
                     name="sort"
                     value={option.value}
                     checked={sort === option.value}
-                    onChange={(e) => setSort(e.target.value as SortMode)}
+                    onChange={(e) => {
+                      console.log('Changing sort to:', e.target.value);
+                      setSort(e.target.value as SortMode);
+                    }}
                     className="text-blue-500 focus:ring-blue-500"
                   />
                   <span className="text-sm text-gray-700">
