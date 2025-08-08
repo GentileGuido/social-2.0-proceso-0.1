@@ -7,20 +7,10 @@ import { GroupCard } from '../components/GroupCard';
 import { Modal } from '../components/Modal';
 import { isFirebaseEnabled, isDemoMode } from '../lib/config';
 import { missingFirebaseEnv } from '../lib/firebaseGuard';
-import '../styles/theme.css';
 
-type SortOption = 'A-Z' | 'Z-A' | 'Recent';
 
-// Helper function to safely get timestamp milliseconds
-const getTimestampMillis = (timestamp: any): number => {
-  if (timestamp?.toMillis) {
-    return timestamp.toMillis();
-  }
-  if (timestamp?.seconds) {
-    return timestamp.seconds * 1000;
-  }
-  return 0;
-};
+
+
 
 export default function Home() {
   const { db, loading, sort, theme, createGroup, createPerson, setSort, setTheme: setSocialTheme } = useSocial();
@@ -33,7 +23,6 @@ export default function Home() {
   const [modalType, setModalType] = useState<'group' | 'person'>('group');
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [formData, setFormData] = useState({ name: '', personName: '', notes: '' });
-  const [sortOption, setSortOption] = useState<SortOption>('Recent');
   const [isSaving, setIsSaving] = useState(false);
 
   // Auto-expand groups with matching people
@@ -449,7 +438,7 @@ export default function Home() {
                     name="sort"
                     value={option.value}
                     checked={sort === option.value}
-                    onChange={(e) => setSort(e.target.value as any)}
+                                         onChange={(e) => setSort(e.target.value as 'az' | 'za' | 'recent')}
                     className="text-primary-500 focus:ring-primary-500"
                   />
                   <span className="text-sm text-gray-700">
