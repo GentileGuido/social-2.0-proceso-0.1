@@ -99,6 +99,14 @@ export const SocialStoreProvider: React.FC<{ children: React.ReactNode }> = ({ c
     hydrate();
   }, [hydrate]);
 
+  // Apply theme to body when theme changes or on mount
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      console.log('Setting theme to:', state.theme);
+      document.body.setAttribute('data-theme', state.theme);
+    }
+  }, [state.theme]);
+
   // Actions
   const addGroup = useCallback((name: string) => {
     const now = Date.now();

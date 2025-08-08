@@ -43,12 +43,14 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
     e.preventDefault();
     if (isSubmitting || !name.trim()) return;
 
+    console.log('Adding person:', name.trim(), 'to group:', groupId);
     setIsSubmitting(true);
     try {
       addPerson(groupId, {
         name: name.trim(),
         notes: notes.trim() || undefined,
       });
+      console.log('Person added successfully');
       onClose();
     } catch (error) {
       console.error('Error adding person:', error);

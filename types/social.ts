@@ -50,6 +50,6 @@ export type SocialStore = SocialState & SocialActions;
 export interface ContextMenuOption {
   label: string;
   action: () => void;
-  icon: string;
+  icon?: React.ComponentType<{ size?: number | string }>;
   danger?: boolean;
 }

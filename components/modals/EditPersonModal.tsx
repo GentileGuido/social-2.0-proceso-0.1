@@ -47,12 +47,14 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({
     e.preventDefault();
     if (isSubmitting || !name.trim() || !person) return;
 
+    console.log('Updating person:', person.name, 'to:', name.trim());
     setIsSubmitting(true);
     try {
       updatePerson(groupId, person.id, {
         name: name.trim(),
         notes: notes.trim() || undefined,
       });
+      console.log('Person updated successfully');
       onClose();
     } catch (error) {
       console.error('Error updating person:', error);

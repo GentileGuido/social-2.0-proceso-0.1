@@ -41,9 +41,11 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
     e.preventDefault();
     if (isSubmitting || !name.trim() || !group) return;
 
+    console.log('Updating group:', group.name, 'to:', name.trim());
     setIsSubmitting(true);
     try {
       renameGroup(group.id, name.trim());
+      console.log('Group updated successfully');
       onClose();
     } catch (error) {
       console.error('Error updating group:', error);

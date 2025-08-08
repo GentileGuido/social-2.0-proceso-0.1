@@ -4,8 +4,23 @@ import type { ThemeKey } from '../types/social';
 
 const themes: ThemeKey[] = ['teal', 'pink', 'yellow', 'charcoal', 'red', 'green', 'blue'];
 
+const themeColors: Record<ThemeKey, string> = {
+  teal: '#0ea5b7',
+  pink: '#f43f5e',
+  yellow: '#f59e0b',
+  charcoal: '#374151',
+  red: '#ef4444',
+  green: '#22c55e',
+  blue: '#3b82f6',
+};
+
 export const ThemePicker: React.FC = () => {
   const { currentTheme, setTheme } = useTheme();
+
+  const handleThemeChange = (theme: ThemeKey) => {
+    console.log('Changing theme to:', theme);
+    setTheme(theme);
+  };
 
   return (
     <div className="mb-6">
@@ -14,16 +29,19 @@ export const ThemePicker: React.FC = () => {
         {themes.map((theme) => (
           <button
             key={theme}
-            onClick={() => setTheme(theme)}
+            onClick={() => handleThemeChange(theme)}
             aria-pressed={currentTheme === theme}
             className={`
-              h-10 w-10 rounded-full border shadow-sm transition-all duration-200
+              w-10 h-10 rounded-full border-2 shadow-sm transition-all duration-200
               ${currentTheme === theme 
-                ? 'ring-2 ring-offset-2 ring-black/60' 
+                ? 'ring-2 ring-offset-2 ring-black/60 scale-110' 
                 : 'hover:scale-105'
               }
             `}
-            style={{ background: `var(--color-${theme}, transparent)` }}
+            style={{ 
+              backgroundColor: themeColors[theme],
+              borderColor: currentTheme === theme ? themeColors[theme] : '#e5e7eb'
+            }}
             title={theme}
             aria-label={`Cambiar tema a ${theme}`}
           />

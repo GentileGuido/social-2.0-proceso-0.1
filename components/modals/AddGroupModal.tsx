@@ -34,9 +34,11 @@ export const AddGroupModal: React.FC<AddGroupModalProps> = ({ isOpen, onClose })
     e.preventDefault();
     if (isSubmitting || !name.trim()) return;
 
+    console.log('Adding group:', name.trim());
     setIsSubmitting(true);
     try {
       addGroup(name.trim());
+      console.log('Group added successfully');
       onClose();
     } catch (error) {
       console.error('Error adding group:', error);

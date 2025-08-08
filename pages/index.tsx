@@ -16,6 +16,10 @@ export default function Home() {
     groups, 
     loading, 
     sort, 
+    addGroup,
+    addPerson,
+    renameGroup,
+    updatePerson,
     deleteGroup, 
     deletePerson, 
     setSort 
@@ -68,14 +72,18 @@ export default function Home() {
 
   const handleFABClick = () => {
     const expandedCount = expandedGroups.size;
+    console.log('FAB clicked, expanded groups:', expandedCount);
+    
     if (expandedCount === 0) {
       // No group expanded - add new group
+      console.log('Opening add group modal');
       setShowAddGroupModal(true);
     } else if (expandedCount === 1) {
       // One group expanded - add new person to that group
       const groupId = Array.from(expandedGroups)[0];
       const group = groups.find(g => g.id === groupId);
       if (group) {
+        console.log('Opening add person modal for group:', group.name);
         setSelectedGroup(group);
         setShowAddPersonModal(true);
       }
@@ -111,10 +119,12 @@ export default function Home() {
       const group = contextMenu.data as Group;
       switch (action) {
         case 'edit':
+          console.log('Opening edit group modal for:', group.name);
           setSelectedGroup(group);
           setShowEditGroupModal(true);
           break;
         case 'delete':
+          console.log('Deleting group:', group.name);
           if (confirm(`¿Estás seguro de que quieres eliminar el grupo "${group.name}" y todas sus personas?`)) {
             deleteGroup(group.id);
           }
@@ -127,11 +137,13 @@ export default function Home() {
 
       switch (action) {
         case 'edit':
+          console.log('Opening edit person modal for:', person.name);
           setSelectedPerson(person);
           setSelectedGroup(group);
           setShowEditPersonModal(true);
           break;
         case 'delete':
+          console.log('Deleting person:', person.name);
           if (confirm(`¿Estás seguro de que quieres eliminar a "${person.name}"?`)) {
             deletePerson(group.id, person.id);
           }
