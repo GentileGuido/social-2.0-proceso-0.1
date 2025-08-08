@@ -1,12 +1,9 @@
 // lib/env.ts
-const normalize = (v?: string) =>
-  (v ?? "")
-    .replace(/\u2013|\u2014/g, "-") // en-dash/em-dash -> hyphen
-    .replace(/\u00A0/g, " ")        // non-breaking space -> space
-    .trim();
+export const normalizeEnv = (v?: string) =>
+  (v || '').replace(/^['"]|['"]$/g, '') || undefined;
 
 const req = (name: string) => {
-  const raw = normalize(process.env[name]);
+  const raw = normalizeEnv(process.env[name]);
   if (!raw) throw new Error(`Missing ENV ${name}`);
   return raw;
 };
@@ -19,7 +16,7 @@ export function getFirebaseEnv() {
   const storageBucket    = req("NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET");
   const messagingSenderId= req("NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID");
   const appId            = req("NEXT_PUBLIC_FIREBASE_APP_ID");
-  const measurementId    = normalize(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID) || undefined;
+  const measurementId    = normalizeEnv(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID) || undefined;
 
   return {
     apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId, measurementId,

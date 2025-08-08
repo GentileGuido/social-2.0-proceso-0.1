@@ -11,7 +11,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
-import { firebase } from '../lib/firebase';
+import { db } from '../lib/firebase';
 import { Group, Name } from '../types';
 import { useAuth } from './AuthContext';
 
@@ -72,8 +72,6 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
       return;
     }
 
-    const { db } = firebase();
-    
     setLoading(true);
     setError(null);
 
@@ -143,7 +141,6 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db } = firebase();
       await addDoc(collection(db, 'users', user.uid, 'groups'), {
         name,
         updatedAt: serverTimestamp(),
@@ -158,7 +155,6 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db } = firebase();
       const groupRef = doc(db, 'users', user.uid, 'groups', id);
       await updateDoc(groupRef, {
         name,
@@ -174,7 +170,6 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db } = firebase();
       // Delete all names in the group first
       const groupNames = names.filter((name) => name.groupId === id);
       for (const name of groupNames) {
@@ -193,7 +188,6 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db } = firebase();
       await addDoc(collection(db, 'users', user.uid, 'names'), {
         firstName,
         notes,
@@ -210,7 +204,6 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db } = firebase();
       const nameRef = doc(db, 'users', user.uid, 'names', id);
       await updateDoc(nameRef, {
         firstName,
@@ -226,7 +219,6 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db } = firebase();
       await deleteDoc(doc(db, 'users', user.uid, 'names', id));
     } catch (error) {
       console.error('Error deleting name:', error);
@@ -238,7 +230,6 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const { db } = firebase();
       const nameRef = doc(db, 'users', user.uid, 'names', nameId);
       await updateDoc(nameRef, {
         groupId: newGroupId,
