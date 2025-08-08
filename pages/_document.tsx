@@ -18,7 +18,7 @@ export default function Document() {
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              if ('serviceWorker' in navigator) {
+              if (process.env.NEXT_PUBLIC_DEMO_MODE !== 'true' && 'serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js')
                     .then(function(registration) {

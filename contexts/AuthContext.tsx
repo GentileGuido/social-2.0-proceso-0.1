@@ -44,14 +44,13 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
+  const DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+  const [user, setUser] = useState(DEMO ? ({ uid: 'demo', displayName: 'Demo User' } as any) : null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isDemoMode) {
+    if (DEMO) {
       // Demo mode - auto sign in with mock user
-      const demoUser = { uid: 'demo', displayName: 'Demo User' } as any;
-      setUser(demoUser);
       setLoading(false);
     } else if (!isFirebaseEnabled) {
       // Mock mode (not demo)
@@ -60,6 +59,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(false);
     } else {
       // Firebase mode
+      setLoading(true);
       const initFirebaseAuth = async () => {
         try {
           const { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } = await import("firebase/auth");
@@ -79,10 +79,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       initFirebaseAuth();
     }
-  }, []);
+  }, [DEMO]);
 
   const signInWithGoogle = async () => {
-    if (isDemoMode) {
+    if (DEMO) {
       // Demo mode - no-op, user is already signed in
       return;
     } else if (!isFirebaseEnabled) {
@@ -103,10 +103,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signOutUser = async () => {
-    if (isDemoMode) {
+    if (DEMO) {
       // Demo mode - reset to demo user
-      const demoUser = { uid: 'demo', displayName: 'Demo User' } as any;
-      setUser(demoUser);
+      return;
     } else if (!isFirebaseEnabled) {
       // Mock mode
       await mockSignOut();

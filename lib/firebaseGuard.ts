@@ -1,4 +1,9 @@
 export function missingFirebaseEnv() {
+  // In demo mode, never show missing config screen
+  if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+    return false;
+  }
+  
   const keys = [
     "NEXT_PUBLIC_FIREBASE_API_KEY",
     "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",

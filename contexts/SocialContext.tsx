@@ -88,7 +88,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const store = createLocalStorageStore();
+      const store = isDemoMode ? createLocalStorageStore() : createLocalStorageStore();
       await store.addGroup(name);
     } catch (error) {
       console.error('Error adding group:', error);
@@ -100,7 +100,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const store = createLocalStorageStore();
+      const store = isDemoMode ? createLocalStorageStore() : createLocalStorageStore();
       await store.updateGroup(id, name);
     } catch (error) {
       console.error('Error updating group:', error);
@@ -112,7 +112,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const store = createLocalStorageStore();
+      const store = isDemoMode ? createLocalStorageStore() : createLocalStorageStore();
       await store.removeGroup(id);
     } catch (error) {
       console.error('Error deleting group:', error);
@@ -124,7 +124,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const store = createLocalStorageStore();
+      const store = isDemoMode ? createLocalStorageStore() : createLocalStorageStore();
       await store.addPerson(groupId, { name, notes });
     } catch (error) {
       console.error('Error adding person:', error);
@@ -136,7 +136,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const store = createLocalStorageStore();
+      const store = isDemoMode ? createLocalStorageStore() : createLocalStorageStore();
       // Find the person to get their groupId
       const person = people.find(p => p.id === id);
       if (!person) throw new Error('Person not found');
@@ -152,7 +152,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const store = createLocalStorageStore();
+      const store = isDemoMode ? createLocalStorageStore() : createLocalStorageStore();
       // Find the person to get their groupId
       const person = people.find(p => p.id === id);
       if (!person) throw new Error('Person not found');
@@ -168,7 +168,7 @@ export const SocialProvider: React.FC<SocialProviderProps> = ({ children }) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      const store = createLocalStorageStore();
+      const store = isDemoMode ? createLocalStorageStore() : createLocalStorageStore();
       // Find the person to move
       const person = people.find(p => p.id === personId);
       if (!person) throw new Error('Person not found');

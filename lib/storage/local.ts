@@ -1,47 +1,33 @@
-import { Group, Person, SocialStorage, ID } from './types';
+import { Group, Person, SocialStorage } from './types';
 
 const KEY = 'social-demo-store-v1';
-type Store = { groups: Group[]; people: Person[] };
-
 const now = () => Date.now();
 const uid = () => crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2);
 
-function load(): Store {
-  if (typeof window === 'undefined') return { groups: [], people: [] };
+function load() { 
   try { 
     return JSON.parse(localStorage.getItem(KEY) || '{"groups":[],"people":[]}'); 
   } catch { 
     return { groups: [], people: [] }; 
-  }
+  } 
 }
 
-function save(s: Store) { 
-  if (typeof window !== 'undefined') localStorage.setItem(KEY, JSON.stringify(s)); 
+function save(s: any) { 
+  localStorage.setItem(KEY, JSON.stringify(s)); 
 }
 
 export function createLocalStorageStore(): SocialStorage {
-  let store = load();
-  let subs = new Set<Function>();
+  let store = load(); 
+  const subs = new Set<Function>();
   
-  const emit = () => {
-    const peopleByGroup = store.people.reduce((acc, person) => {
-      if (!acc[person.groupId]) acc[person.groupId] = [];
-      acc[person.groupId].push(person);
-      return acc;
-    }, {} as Record<ID, Person[]>);
-    
-    subs.forEach(cb => cb(store.groups, peopleByGroup));
-  };
-
+  const groupBy = (arr: any[], k: string) => arr.reduce((a: any, x: any) => ((a[x[k]] ??= []).push(x), a), {});
+  
+  const emit = () => subs.forEach(cb => cb(store.groups, groupBy(store.people, 'groupId')));
+  
   return {
     subscribe(cb) { 
       subs.add(cb); 
-      const peopleByGroup = store.people.reduce((acc, person) => {
-        if (!acc[person.groupId]) acc[person.groupId] = [];
-        acc[person.groupId].push(person);
-        return acc;
-      }, {} as Record<ID, Person[]>);
-      cb(store.groups, peopleByGroup); 
+      cb(store.groups, groupBy(store.people, 'groupId')); 
       return () => subs.delete(cb); 
     },
     
@@ -52,18 +38,18 @@ export function createLocalStorageStore(): SocialStorage {
     },
     
     async removeGroup(id) { 
-      store.groups = store.groups.filter(g => g.id !== id); 
-      store.people = store.people.filter(p => p.groupId !== id); 
+      store.groups = store.groups.filter((g: Group) => g.id !== id); 
+      store.people = store.people.filter((p: Person) => p.groupId !== id); 
       save(store); 
       emit(); 
     },
     
-    async addPerson(groupId, data) { 
+    async addPerson(groupId, d) { 
       store.people.push({ 
         id: uid(), 
         groupId, 
-        name: data.name, 
-        notes: data.notes, 
+        name: d.name, 
+        notes: d.notes, 
         createdAt: now() 
       }); 
       save(store); 
@@ -71,13 +57,13 @@ export function createLocalStorageStore(): SocialStorage {
     },
     
     async removePerson(groupId, personId) { 
-      store.people = store.people.filter(p => !(p.groupId === groupId && p.id === personId)); 
+      store.people = store.people.filter((p: Person) => !(p.groupId === groupId && p.id === personId)); 
       save(store); 
       emit(); 
     },
     
     async updatePerson(groupId, personId, data) {
-      const person = store.people.find(p => p.groupId === groupId && p.id === personId);
+      const person = store.people.find((p: Person) => p.groupId === groupId && p.id === personId);
       if (person) {
         Object.assign(person, data);
         save(store);
@@ -86,7 +72,7 @@ export function createLocalStorageStore(): SocialStorage {
     },
     
     async updateGroup(id, name) {
-      const group = store.groups.find(g => g.id === id);
+      const group = store.groups.find((g: Group) => g.id === id);
       if (group) {
         group.name = name;
         save(store);
